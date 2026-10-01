@@ -1,0 +1,29 @@
+# Build
+build/
+build-*/
+cmake-build-*/
+compile_commands.json
+
+# Resultados de experimentos: van en ~/tesis/runs/, nunca en git
+runs/
+*.log
+
+# Compilados
+*.o
+*.so
+*.a
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# IDE / SO
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Documentos privados (la propuesta firmada vive en ~/tesis/privado/)
+*_firmada.pdf
