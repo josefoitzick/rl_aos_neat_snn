@@ -21,4 +21,12 @@ InnovationTracker::Split InnovationTracker::split(int split_innov, int in, int o
     return s;
 }
 
+int InnovationTracker::duplicate(int node_id) {
+    auto it = dup_this_gen_.find(node_id);
+    if (it != dup_this_gen_.end()) return it->second;
+    int id = next_node_id_++;
+    dup_this_gen_[node_id] = id;
+    return id;
+}
+
 }  // namespace neat

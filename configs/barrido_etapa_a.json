@@ -1,0 +1,139 @@
+{
+  "name": "barrido_etapa_a",
+  "description": "Selección de entornos, etapa A (docs/entornos_rltools.md, diseno_neat_ap.md §15.2): NEAT estático de Stanley (P = 0,909/0,057/0,034) en todos los entornos de RLtools. 5 semillas × 500 generaciones. Base calibrada: E=10, reasignación 0,02, 10 especies objetivo. Entornos de memoria con --keep-state (_memoria) y con política reactiva como control (_reactivo). RLtools render @ 6bb2fda.",
+  "base": [
+    "--selector",
+    "static",
+    "--generations",
+    "500",
+    "--episodes",
+    "10",
+    "--test-episodes",
+    "10",
+    "--final-episodes",
+    "100",
+    "--weight-replace-prob",
+    "0.02",
+    "--target-species",
+    "10"
+  ],
+  "variants": {
+    "ant": [
+      "--env",
+      "ant"
+    ],
+    "reacher-visual-memory-hard_memoria": [
+      "--env",
+      "reacher-visual-memory-hard",
+      "--keep-state"
+    ],
+    "reacher-visual-memory-hard_reactivo": [
+      "--env",
+      "reacher-visual-memory-hard"
+    ],
+    "reacher-visual-memory_memoria": [
+      "--env",
+      "reacher-visual-memory",
+      "--keep-state"
+    ],
+    "reacher-visual-memory_reactivo": [
+      "--env",
+      "reacher-visual-memory"
+    ],
+    "bottleneck": [
+      "--env",
+      "bottleneck"
+    ],
+    "car-track": [
+      "--env",
+      "car-track"
+    ],
+    "reacher-visual": [
+      "--env",
+      "reacher-visual"
+    ],
+    "acrobot-swingup": [
+      "--env",
+      "acrobot-swingup"
+    ],
+    "acrobot_t5": [
+      "--env",
+      "acrobot"
+    ],
+    "acrobot_t1": [
+      "--env",
+      "acrobot",
+      "--torque-scale",
+      "0.2"
+    ],
+    "car": [
+      "--env",
+      "car"
+    ],
+    "l2f": [
+      "--env",
+      "l2f"
+    ],
+    "l2f-tiny": [
+      "--env",
+      "l2f-tiny"
+    ],
+    "pendulum": [
+      "--env",
+      "pendulum"
+    ],
+    "pendulum-multitask": [
+      "--env",
+      "pendulum-multitask"
+    ],
+    "reacher": [
+      "--env",
+      "reacher"
+    ],
+    "memory_memoria": [
+      "--env",
+      "memory",
+      "--keep-state"
+    ],
+    "memory_reactivo": [
+      "--env",
+      "memory"
+    ],
+    "flag_memoria": [
+      "--env",
+      "flag",
+      "--keep-state"
+    ],
+    "flag_reactivo": [
+      "--env",
+      "flag"
+    ],
+    "pendulum-position_memoria": [
+      "--env",
+      "pendulum-position",
+      "--keep-state"
+    ],
+    "pendulum-position_reactivo": [
+      "--env",
+      "pendulum-position"
+    ],
+    "pendulum-velocity_memoria": [
+      "--env",
+      "pendulum-velocity",
+      "--keep-state"
+    ],
+    "pendulum-velocity_reactivo": [
+      "--env",
+      "pendulum-velocity"
+    ],
+    "pendulum-meta_memoria": [
+      "--env",
+      "pendulum-meta",
+      "--keep-state"
+    ],
+    "pendulum-meta_reactivo": [
+      "--env",
+      "pendulum-meta"
+    ]
+  }
+}

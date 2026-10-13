@@ -19,8 +19,11 @@ public:
     struct Split { int node_id; int innov_in; int innov_out; };
     Split split(int split_innov, int in, int out);
 
+    // Nodo copia de `node_id` (duplicar neurona): la misma duplicación en la misma generación reutiliza el id
+    int duplicate(int node_id);
+
     // Olvida las innovaciones de la generación actual (los contadores siguen)
-    void newGeneration() { conn_this_gen_.clear(); split_this_gen_.clear(); }
+    void newGeneration() { conn_this_gen_.clear(); split_this_gen_.clear(); dup_this_gen_.clear(); }
 
     int nextInnovation() const { return next_innov_; }
     int nextNodeId() const { return next_node_id_; }
@@ -30,6 +33,7 @@ private:
     int next_node_id_;
     std::map<std::pair<int, int>, int> conn_this_gen_;
     std::map<int, Split> split_this_gen_;
+    std::map<int, int> dup_this_gen_;
 };
 
 }  // namespace neat

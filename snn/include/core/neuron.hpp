@@ -113,6 +113,12 @@ public:
     double getGInh() const { return g_inh; }
 
     void setNeuronType(NeuronType type);
+    // (a, b, c, d) arbitrarios (operadores de NEAT sobre la dinámica); deja la neurona en reposo
+    void setParams(double a_, double b_, double c_, double d_) { a = a_; b = b_; c = c_; d = d_; reset(); }
+    double getA() const { return a; }
+    double getB() const { return b; }
+    double getC() const { return c; }
+    double getD() const { return d; }
 
     void setVoltage(double voltage) { v = voltage; }
     void setRecovery(double recovery) { u = recovery; }

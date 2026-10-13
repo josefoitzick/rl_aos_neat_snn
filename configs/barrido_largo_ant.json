@@ -1,0 +1,31 @@
+{
+  "name": "barrido_largo_ant",
+  "description": "ant del barrido largo (docs/diseno_neat_ap.md §15.4.1) con 1000 generaciones en vez de 2000: a 2000 tardaría 4–5 días y debe estar listo para la reunión del martes 2026-10-06. Mismo binario y protocolos (_fijo, _rot).",
+  "base": [
+    "--selector",
+    "static",
+    "--generations",
+    "1000",
+    "--episodes",
+    "10",
+    "--test-episodes",
+    "10",
+    "--final-episodes",
+    "100",
+    "--weight-replace-prob",
+    "0.02",
+    "--target-species",
+    "10"
+  ],
+  "variants": {
+    "ant_fijo": [
+      "--env",
+      "ant"
+    ],
+    "ant_rot": [
+      "--env",
+      "ant",
+      "--resample-train"
+    ]
+  }
+}

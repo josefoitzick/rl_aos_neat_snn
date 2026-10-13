@@ -1,0 +1,14 @@
+{
+  "name": "ap_credito_pendulum",
+  "description": "Estudio del crédito y la tasa de persecución de Adaptive Pursuit en Pendulum (antes de leer Thierens 2005 / Kohl 2012). Base calibrada: E=10, reasignación 0,02, 10 especies objetivo, 150 generaciones. 5 semillas.",
+  "base": ["--env", "pendulum", "--generations", "150", "--episodes", "10", "--test-episodes", "10",
+           "--final-episodes", "100", "--weight-replace-prob", "0.02", "--target-species", "10"],
+  "variants": {
+    "static":             ["--selector", "static"],
+    "ap_a03_b01_media":   ["--selector", "ap", "--ap-alpha", "0.3", "--ap-beta", "0.1"],
+    "ap_a03_b01_extremo": ["--selector", "ap", "--ap-alpha", "0.3", "--ap-beta", "0.1", "--ap-extreme"],
+    "ap_a03_b005_media":  ["--selector", "ap", "--ap-alpha", "0.3", "--ap-beta", "0.05"],
+    "ap_a03_b03_media":   ["--selector", "ap", "--ap-alpha", "0.3", "--ap-beta", "0.3"],
+    "ap_a03_b01_uniforme":["--selector", "ap", "--ap-alpha", "0.3", "--ap-beta", "0.1", "--ap-uniform"]
+  }
+}

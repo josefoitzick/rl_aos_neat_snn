@@ -1,0 +1,14 @@
+# Entorno de análisis estadístico y gráficos (propuesta §3.4 y §5.2).
+#   conda env create -f analysis/environment.yml
+#   conda activate tesis-analisis
+name: tesis-analisis
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy
+  - pandas
+  - scipy
+  - lifelines
+  - matplotlib
+  - seaborn

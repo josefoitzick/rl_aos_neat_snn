@@ -27,6 +27,8 @@ struct AdaptivePursuitConfig {
     // P inicial. Vacío → uniforme 1/K (Thierens). Los experimentos lo inician desde el P
     // estático de Stanley, para que la única diferencia con la línea base 1 sea la adaptación.
     std::vector<double> p_init;
+    // K: operadores del catálogo (si p_init no está vacío, K = su tamaño)
+    int num_operators = neat::kNumOperators;
 
     // ── Modo SNAP-NEAT (Kohl & Miikkulainen 2012, §III-B/C y Algoritmo 1) ──
     // Recompensa = fitness normalizado del individuo, (f − f_peor)/(f_mejor − f_peor), atribuido al
@@ -55,6 +57,7 @@ public:
 
 private:
     AdaptivePursuitConfig cfg_;
+    int K_;
     std::vector<double> p_, q_, last_credit_;
     int generations_seen_ = 0;
     std::vector<std::vector<double>> init_rewards_;   // modo SNAP: recompensas del período inicial

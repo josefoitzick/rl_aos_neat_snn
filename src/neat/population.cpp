@@ -68,9 +68,10 @@ GenerationReport Population::endGeneration() {
         st.worst = std::min(st.worst, g.fitness);
         sum_hidden += g.numHidden(); sum_conns += g.numEnabledConns();
         if (g.origin.has_operator)
-            report.outcomes.push_back({g.origin.op, g.fitness, g.origin.parent_fitness});
+            report.outcomes.push_back({g.origin.op, g.fitness, g.origin.parent_fitness, g.origin.slot,
+                                       g.origin.applied});
         if (g.origin.last_op >= 0)
-            report.last_op_scores.push_back({static_cast<Operator>(g.origin.last_op), g.fitness});
+            report.last_op_scores.push_back({cfg_.catalog[g.origin.last_op], g.fitness, g.origin.last_op});
     }
     st.best = genomes_[champ].fitness;
     st.mean = sum / n;
@@ -160,8 +161,8 @@ std::vector<int> Population::allocateOffspring() {
 
 void Population::reproduce(const std::vector<double>& op_probs) {
     if (!ended_) throw std::logic_error("Population::reproduce antes de endGeneration");
-    if (static_cast<int>(op_probs.size()) != kNumOperators)
-        throw std::invalid_argument("Population::reproduce: P debe tener kNumOperators elementos");
+    if (op_probs.size() != cfg_.catalog.size())
+        throw std::invalid_argument("Population::reproduce: P debe tener un elemento por operador del catálogo");
 
     innov_.newGeneration();
     std::discrete_distribution<int> pick_op(op_probs.begin(), op_probs.end());
@@ -219,11 +220,26 @@ void Population::reproduce(const std::vector<double>& op_probs) {
                                   : Genome::crossover(*p2, p1, cfg_, rng_);
                 parent_ref = std::max(p1.fitness, p2->fitness);
             }
-            Operator op = static_cast<Operator>(pick_op(rng_));
-            child.apply(op, cfg_, innov_, rng_);          // un operador por hijo (esquema categórico)
+            const int slot = pick_op(rng_);               // un operador por hijo (esquema categórico)
+            const Operator op = cfg_.catalog[slot];
+            bool applied;
+            if (op == Operator::WeightsDirected) {
+                // Compañero: otro sobreviviente de la especie; si es el único, cualquier genoma de la población
+                const Genome* q;
+                if (survivors > 1) {
+                    int j = m[randomIndex(survivors)];
+                    for (int tries = 0; tries < 5 && &genomes_[j] == &p1; tries++) j = m[randomIndex(survivors)];
+                    q = &genomes_[j];
+                } else {
+                    q = &genomes_[randomIndex(genomes_.size())];
+                }
+                applied = child.mutateDirected(*q, cfg_, rng_);
+            } else {
+                applied = child.apply(op, cfg_, innov_, rng_);
+            }
             child.id = next_genome_id_++;
             child.fitness = 0.0;
-            child.origin = Origin{true, op, parent_ref, static_cast<int>(op)};
+            child.origin = Origin{true, op, parent_ref, slot, slot, applied};
             next.push_back(std::move(child));
         }
 

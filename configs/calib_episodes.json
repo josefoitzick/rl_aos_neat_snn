@@ -1,0 +1,11 @@
+{
+  "name": "calib_episodes",
+  "description": "Calibración 1: episodios de entrenamiento por evaluación (E) y brecha entrenamiento–test. NEAT estático, Pendulum.",
+  "base": ["--env", "pendulum", "--selector", "static", "--generations", "150",
+           "--test-episodes", "10", "--final-episodes", "100"],
+  "variants": {
+    "E5":  ["--episodes", "5"],
+    "E10": ["--episodes", "10"],
+    "E20": ["--episodes", "20"]
+  }
+}

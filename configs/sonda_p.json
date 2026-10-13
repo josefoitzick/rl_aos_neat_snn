@@ -1,0 +1,460 @@
+{
+  "name": "sonda_p",
+  "description": "Sonda de P fija (docs/diseno_neat_ap.md §16): ¿importa P?, ¿un P que cambia a mitad de camino (generación 250) supera a los P fijos?, ¿sobra algún operador? En los 3 entornos elegidos (bottleneck, acrobot-swingup, l2f), ambos protocolos, 500 generaciones. P = (pesos, conexión, nodo), se normaliza.",
+  "base": [
+    "--selector",
+    "static",
+    "--generations",
+    "500",
+    "--episodes",
+    "10",
+    "--test-episodes",
+    "10",
+    "--final-episodes",
+    "100",
+    "--weight-replace-prob",
+    "0.02",
+    "--target-species",
+    "10"
+  ],
+  "variants": {
+    "bottleneck_fijo_stanley": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.8,0.05,0.03"
+    ],
+    "bottleneck_fijo_uniforme": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "1,1,1"
+    ],
+    "bottleneck_fijo_pesos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.98,0.01,0.01"
+    ],
+    "bottleneck_fijo_estructura": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.5,0.25,0.25"
+    ],
+    "bottleneck_fijo_nodos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.6,0.1,0.3"
+    ],
+    "bottleneck_fijo_estr_a_pesos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.5,0.25,0.25",
+      "--p2",
+      "0.98,0.01,0.01",
+      "--p-switch",
+      "250"
+    ],
+    "bottleneck_fijo_pesos_a_estr": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.98,0.01,0.01",
+      "--p2",
+      "0.5,0.25,0.25",
+      "--p-switch",
+      "250"
+    ],
+    "bottleneck_fijo_sin_conexion": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.8,0,0.03"
+    ],
+    "bottleneck_fijo_sin_nodo": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.8,0.05,0"
+    ],
+    "bottleneck_fijo_sin_pesos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0,0.05,0.03"
+    ],
+    "bottleneck_rot_stanley": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.8,0.05,0.03",
+      "--resample-train"
+    ],
+    "bottleneck_rot_uniforme": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "1,1,1",
+      "--resample-train"
+    ],
+    "bottleneck_rot_pesos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.98,0.01,0.01",
+      "--resample-train"
+    ],
+    "bottleneck_rot_estructura": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.5,0.25,0.25",
+      "--resample-train"
+    ],
+    "bottleneck_rot_nodos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.6,0.1,0.3",
+      "--resample-train"
+    ],
+    "bottleneck_rot_estr_a_pesos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.5,0.25,0.25",
+      "--resample-train",
+      "--p2",
+      "0.98,0.01,0.01",
+      "--p-switch",
+      "250"
+    ],
+    "bottleneck_rot_pesos_a_estr": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.98,0.01,0.01",
+      "--resample-train",
+      "--p2",
+      "0.5,0.25,0.25",
+      "--p-switch",
+      "250"
+    ],
+    "bottleneck_rot_sin_conexion": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.8,0,0.03",
+      "--resample-train"
+    ],
+    "bottleneck_rot_sin_nodo": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0.8,0.05,0",
+      "--resample-train"
+    ],
+    "bottleneck_rot_sin_pesos": [
+      "--env",
+      "bottleneck",
+      "--p",
+      "0,0.05,0.03",
+      "--resample-train"
+    ],
+    "acrobot-swingup_fijo_stanley": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.8,0.05,0.03"
+    ],
+    "acrobot-swingup_fijo_uniforme": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "1,1,1"
+    ],
+    "acrobot-swingup_fijo_pesos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.98,0.01,0.01"
+    ],
+    "acrobot-swingup_fijo_estructura": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.5,0.25,0.25"
+    ],
+    "acrobot-swingup_fijo_nodos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.6,0.1,0.3"
+    ],
+    "acrobot-swingup_fijo_estr_a_pesos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.5,0.25,0.25",
+      "--p2",
+      "0.98,0.01,0.01",
+      "--p-switch",
+      "250"
+    ],
+    "acrobot-swingup_fijo_pesos_a_estr": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.98,0.01,0.01",
+      "--p2",
+      "0.5,0.25,0.25",
+      "--p-switch",
+      "250"
+    ],
+    "acrobot-swingup_fijo_sin_conexion": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.8,0,0.03"
+    ],
+    "acrobot-swingup_fijo_sin_nodo": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.8,0.05,0"
+    ],
+    "acrobot-swingup_fijo_sin_pesos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0,0.05,0.03"
+    ],
+    "acrobot-swingup_rot_stanley": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.8,0.05,0.03",
+      "--resample-train"
+    ],
+    "acrobot-swingup_rot_uniforme": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "1,1,1",
+      "--resample-train"
+    ],
+    "acrobot-swingup_rot_pesos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.98,0.01,0.01",
+      "--resample-train"
+    ],
+    "acrobot-swingup_rot_estructura": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.5,0.25,0.25",
+      "--resample-train"
+    ],
+    "acrobot-swingup_rot_nodos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.6,0.1,0.3",
+      "--resample-train"
+    ],
+    "acrobot-swingup_rot_estr_a_pesos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.5,0.25,0.25",
+      "--resample-train",
+      "--p2",
+      "0.98,0.01,0.01",
+      "--p-switch",
+      "250"
+    ],
+    "acrobot-swingup_rot_pesos_a_estr": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.98,0.01,0.01",
+      "--resample-train",
+      "--p2",
+      "0.5,0.25,0.25",
+      "--p-switch",
+      "250"
+    ],
+    "acrobot-swingup_rot_sin_conexion": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.8,0,0.03",
+      "--resample-train"
+    ],
+    "acrobot-swingup_rot_sin_nodo": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0.8,0.05,0",
+      "--resample-train"
+    ],
+    "acrobot-swingup_rot_sin_pesos": [
+      "--env",
+      "acrobot-swingup",
+      "--p",
+      "0,0.05,0.03",
+      "--resample-train"
+    ],
+    "l2f_fijo_stanley": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.8,0.05,0.03"
+    ],
+    "l2f_fijo_uniforme": [
+      "--env",
+      "l2f",
+      "--p",
+      "1,1,1"
+    ],
+    "l2f_fijo_pesos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.98,0.01,0.01"
+    ],
+    "l2f_fijo_estructura": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.5,0.25,0.25"
+    ],
+    "l2f_fijo_nodos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.6,0.1,0.3"
+    ],
+    "l2f_fijo_estr_a_pesos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.5,0.25,0.25",
+      "--p2",
+      "0.98,0.01,0.01",
+      "--p-switch",
+      "250"
+    ],
+    "l2f_fijo_pesos_a_estr": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.98,0.01,0.01",
+      "--p2",
+      "0.5,0.25,0.25",
+      "--p-switch",
+      "250"
+    ],
+    "l2f_fijo_sin_conexion": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.8,0,0.03"
+    ],
+    "l2f_fijo_sin_nodo": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.8,0.05,0"
+    ],
+    "l2f_fijo_sin_pesos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0,0.05,0.03"
+    ],
+    "l2f_rot_stanley": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.8,0.05,0.03",
+      "--resample-train"
+    ],
+    "l2f_rot_uniforme": [
+      "--env",
+      "l2f",
+      "--p",
+      "1,1,1",
+      "--resample-train"
+    ],
+    "l2f_rot_pesos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.98,0.01,0.01",
+      "--resample-train"
+    ],
+    "l2f_rot_estructura": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.5,0.25,0.25",
+      "--resample-train"
+    ],
+    "l2f_rot_nodos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.6,0.1,0.3",
+      "--resample-train"
+    ],
+    "l2f_rot_estr_a_pesos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.5,0.25,0.25",
+      "--resample-train",
+      "--p2",
+      "0.98,0.01,0.01",
+      "--p-switch",
+      "250"
+    ],
+    "l2f_rot_pesos_a_estr": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.98,0.01,0.01",
+      "--resample-train",
+      "--p2",
+      "0.5,0.25,0.25",
+      "--p-switch",
+      "250"
+    ],
+    "l2f_rot_sin_conexion": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.8,0,0.03",
+      "--resample-train"
+    ],
+    "l2f_rot_sin_nodo": [
+      "--env",
+      "l2f",
+      "--p",
+      "0.8,0.05,0",
+      "--resample-train"
+    ],
+    "l2f_rot_sin_pesos": [
+      "--env",
+      "l2f",
+      "--p",
+      "0,0.05,0.03",
+      "--resample-train"
+    ]
+  }
+}

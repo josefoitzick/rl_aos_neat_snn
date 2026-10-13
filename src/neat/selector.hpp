@@ -8,10 +8,23 @@
 namespace neat {
 
 // Resultado de aplicar un operador: el hijo ya evaluado y la referencia de su(s) padre(s).
+// `slot` es la posición del operador en el catálogo (−1: se usa el valor del enum, que coincide con la
+// posición en el catálogo por defecto).
 struct OperatorOutcome {
     Operator op;
     double child_fitness;
     double parent_fitness;
+    int slot = -1;
+    bool applied = true;   // false: el operador no pudo aplicarse
+    int slotIndex() const { return slot >= 0 ? slot : static_cast<int>(op); }
+};
+
+// (último operador del linaje, fitness): crédito "continuo" de SNAP-NEAT
+struct LastOpScore {
+    Operator op;
+    double fitness;
+    int slot = -1;
+    int slotIndex() const { return slot >= 0 ? slot : static_cast<int>(op); }
 };
 
 struct PopulationStats {
@@ -30,7 +43,7 @@ struct GenerationReport {
     std::vector<OperatorOutcome> outcomes;
     // (último operador del linaje, fitness) para TODOS los genomas con historia, incluidas las
     // élites reevaluadas: crédito "continuo" de SNAP-NEAT (Kohl & Miikkulainen 2012 §III-B)
-    std::vector<std::pair<Operator, double>> last_op_scores;
+    std::vector<LastOpScore> last_op_scores;
 };
 
 // Punto de enganche del AOS: NEAT solo pide el vector P y reporta resultados.
@@ -39,7 +52,7 @@ struct GenerationReport {
 class OperatorSelector {
 public:
     virtual ~OperatorSelector() = default;
-    virtual std::vector<double> probabilities() const = 0;   // P, tamaño kNumOperators, suma 1
+    virtual std::vector<double> probabilities() const = 0;   // P sobre el catálogo (tamaño K), suma 1
     virtual void update(const GenerationReport& report) = 0;
     virtual std::string name() const = 0;
 };
@@ -47,7 +60,7 @@ public:
 // Línea base 1: probabilidades fijas.
 class StaticSelector : public OperatorSelector {
 public:
-    explicit StaticSelector(std::vector<double> weights);   // se normalizan a suma 1
+    explicit StaticSelector(std::vector<double> weights);   // uno por operador del catálogo; se normalizan a suma 1
 
     // Stanley & Miikkulainen (2002) §4.1: pesos 0,8 · agregar conexión 0,05 · agregar nodo 0,03,
     // normalizados como distribución categórica (un operador por hijo).

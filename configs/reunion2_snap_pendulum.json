@@ -1,0 +1,9 @@
+{
+  "name": "reunion2_pendulum",
+  "description": "Tercera curva de la reunión 2: Adaptive Pursuit con el crédito de SNAP-NEAT (Kohl & Miikkulainen 2012): fitness normalizado del último operador, actualización tras cada evaluación, α=β=0,05, P_min=0,10, período inicial uniforme = 1/5 de las generaciones.",
+  "base": ["--env", "pendulum", "--generations", "400", "--episodes", "10", "--test-episodes", "10",
+           "--final-episodes", "100", "--weight-replace-prob", "0.02", "--target-species", "10"],
+  "variants": {
+    "ap_snap": ["--selector", "ap", "--ap-snap", "--ap-alpha", "0.05", "--ap-beta", "0.05", "--ap-pmin", "0.10", "--ap-init-gens", "80"]
+  }
+}

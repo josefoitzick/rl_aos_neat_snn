@@ -6,8 +6,8 @@
 namespace neat {
 
 StaticSelector::StaticSelector(std::vector<double> weights) : p_(std::move(weights)) {
-    if (static_cast<int>(p_.size()) != kNumOperators)
-        throw std::invalid_argument("StaticSelector: se esperan kNumOperators pesos");
+    if (p_.empty() || static_cast<int>(p_.size()) > kNumOperatorTypes)
+        throw std::invalid_argument("StaticSelector: se espera un peso por operador del catálogo");
     double sum = std::accumulate(p_.begin(), p_.end(), 0.0);
     if (sum <= 0.0) throw std::invalid_argument("StaticSelector: pesos no positivos");
     for (double& p : p_) p /= sum;

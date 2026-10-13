@@ -1,0 +1,49 @@
+{
+  "name": "barrido_etapa_b",
+  "description": "Extensión B del barrido de la etapa A (mismo experimento; equivalencia certificada en docs/entornos_rltools.md §6.2): entornos visuales con escenas 3D (l2f-visual, hyperdrone-target-frame, hyperdrone-moving-gate), con memoria (--keep-state) y reactivos. Mismo protocolo que A: NEAT estático de Stanley, 5 semillas × 500 generaciones, E=10, reasignación 0,02, 10 especies objetivo. Test en la casa 2 (no vista).",
+  "base": [
+    "--selector",
+    "static",
+    "--generations",
+    "500",
+    "--episodes",
+    "10",
+    "--test-episodes",
+    "10",
+    "--final-episodes",
+    "100",
+    "--weight-replace-prob",
+    "0.02",
+    "--target-species",
+    "10"
+  ],
+  "variants": {
+    "hyperdrone-target-frame_memoria": [
+      "--env",
+      "hyperdrone-target-frame",
+      "--keep-state"
+    ],
+    "hyperdrone-target-frame_reactivo": [
+      "--env",
+      "hyperdrone-target-frame"
+    ],
+    "hyperdrone-moving-gate_memoria": [
+      "--env",
+      "hyperdrone-moving-gate",
+      "--keep-state"
+    ],
+    "hyperdrone-moving-gate_reactivo": [
+      "--env",
+      "hyperdrone-moving-gate"
+    ],
+    "l2f-visual_memoria": [
+      "--env",
+      "l2f-visual",
+      "--keep-state"
+    ],
+    "l2f-visual_reactivo": [
+      "--env",
+      "l2f-visual"
+    ]
+  }
+}

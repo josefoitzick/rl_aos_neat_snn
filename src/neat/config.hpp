@@ -1,7 +1,9 @@
 #ifndef NEAT_CONFIG_HPP
 #define NEAT_CONFIG_HPP
 
+#include <vector>
 #include "core/neuron.hpp"
+#include "operators.hpp"
 
 namespace neat {
 
@@ -50,6 +52,31 @@ struct NeatConfig {
     // ── Red ──
     NeuronType neuron_type        = NeuronType::TONIC_SPIKING;  // IZ-A del paper
     double     dt                 = 1.0;                        // ms
+
+    // ── Catálogo ampliado (docs/operadores_candidatos.md). Con el catálogo por defecto nada de esto se usa ──
+    std::vector<Operator> catalog = defaultCatalog();
+    double c4                     = 0.4;    // peso de la diferencia media de parámetros de nodo en δ
+    double fine_weight_sigma      = 1.0;    // A2: N(0, σ) sobre 1–3 conexiones (SharpNEAT: σ chico, 1–3 conexiones)
+    bool   fine_weight_cauchy     = false;  // A2 con cola pesada: Cauchy de escala σ (Yao et al. 1999)
+    double directed_iso_sigma     = 0.6;    // A7: ruido isotrópico (~1 % del ancho del rango inicial de pesos)
+    double directed_line_sigma    = 0.2;    // A7: paso sobre la línea entre élites (Vassiliades y Mouret 2018)
+    double bias_sigma             = 1.0;    // B1: N(0, σ) sobre la corriente de reposo
+    double bias_max               = 10.0;   // B1: |sesgo| máximo (con ≈3 una TONIC_SPIKING ya dispara sola)
+    double gain_log_sigma         = 0.3;    // E1: ganancia × exp(N(0, σ))
+    double gain_min               = 0.25;
+    double gain_max               = 4.0;
+    int    add_node_multi_k       = 3;      // C9: nodos agregados por aplicación
+    // B3 y C4: familias corticales de Izhikevich (2004, Fig. 2)
+    std::vector<NeuronType> families = {NeuronType::REGULAR_SPIKING, NeuronType::FAST_SPIKING,
+                                        NeuronType::INTRINSICALLY_BURSTING, NeuronType::CHATTERING};
+};
+
+// B2: rangos de (a, b, c, d) para la perturbación continua; cubren RS, FS, IB, CH, LTS, RZ y TONIC
+// (Izhikevich 2004) sin llegar a regímenes que divergen con Euler (p. ej. BISTABILITY, a = 1, b = 1,5).
+struct IzhikevichBounds {
+    double lo[4] = {0.01, 0.15, -70.0, 0.5};
+    double hi[4] = {0.12, 0.30, -45.0, 10.0};
+    double sigma[4] = {0.01, 0.01, 2.0, 0.5};
 };
 
 }  // namespace neat

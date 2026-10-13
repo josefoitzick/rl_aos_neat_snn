@@ -8,19 +8,17 @@
 
 namespace aos {
 
-using neat::kNumOperators;
-
 AdaptivePursuitSelector::AdaptivePursuitSelector(const AdaptivePursuitConfig& cfg)
     : cfg_(cfg),
-      q_(kNumOperators, cfg.q_init),
-      last_credit_(kNumOperators, std::numeric_limits<double>::quiet_NaN()) {
-    if (cfg_.p_min < 0.0 || kNumOperators * cfg_.p_min >= 1.0)
+      K_(cfg.p_init.empty() ? cfg.num_operators : static_cast<int>(cfg.p_init.size())),
+      q_(K_, cfg.q_init),
+      last_credit_(K_, std::numeric_limits<double>::quiet_NaN()) {
+    if (K_ < 1) throw std::invalid_argument("AdaptivePursuit: se requiere al menos un operador");
+    if (cfg_.p_min < 0.0 || K_ * cfg_.p_min >= 1.0)
         throw std::invalid_argument("AdaptivePursuit: se requiere 0 <= K·p_min < 1");
     if (cfg_.p_init.empty()) {
-        p_.assign(kNumOperators, 1.0 / kNumOperators);
+        p_.assign(K_, 1.0 / K_);
     } else {
-        if (static_cast<int>(cfg_.p_init.size()) != kNumOperators)
-            throw std::invalid_argument("AdaptivePursuit: p_init debe tener K elementos");
         p_ = cfg_.p_init;
         double sum = std::accumulate(p_.begin(), p_.end(), 0.0);
         for (double& p : p_) p = std::max(p / sum, cfg_.p_min);   // respetar la cota inferior
@@ -36,28 +34,28 @@ double AdaptivePursuitSelector::childReward(const neat::OperatorOutcome& o, doub
 }
 
 void AdaptivePursuitSelector::pursue(int star) {
-    const double p_max = 1.0 - (kNumOperators - 1) * cfg_.p_min;
-    for (int i = 0; i < kNumOperators; i++)
+    const double p_max = 1.0 - (K_ - 1) * cfg_.p_min;
+    for (int i = 0; i < K_; i++)
         p_[i] += cfg_.beta * (((i == star) ? p_max : cfg_.p_min) - p_[i]);
 }
 
 void AdaptivePursuitSelector::updateSnap(const neat::GenerationReport& report) {
     const double range = report.stats.best - report.stats.worst;
     auto reward = [&](double f) { return range > 0.0 ? (f - report.stats.worst) / range : 0.0; };
-    std::vector<double> sum(kNumOperators, 0.0);
-    std::vector<int> n(kNumOperators, 0);
+    std::vector<double> sum(K_, 0.0);
+    std::vector<int> n(K_, 0);
 
     if (generations_seen_ < cfg_.init_generations) {          // período inicial: P uniforme fijo
-        if (init_rewards_.empty()) init_rewards_.assign(kNumOperators, {});
-        for (const auto& [op, f] : report.last_op_scores) {
-            int i = static_cast<int>(op);
-            double r = reward(f);
+        if (init_rewards_.empty()) init_rewards_.assign(K_, {});
+        for (const auto& s : report.last_op_scores) {
+            int i = s.slotIndex();
+            double r = reward(s.fitness);
             init_rewards_[i].push_back(r);
             sum[i] += r; n[i]++;
         }
-        p_.assign(kNumOperators, 1.0 / kNumOperators);
+        p_.assign(K_, 1.0 / K_);
         if (++generations_seen_ == cfg_.init_generations) {  // Q = media + 1 desv. est.
-            for (int i = 0; i < kNumOperators; i++) {
+            for (int i = 0; i < K_; i++) {
                 const auto& v = init_rewards_[i];
                 if (v.empty()) continue;
                 double m = std::accumulate(v.begin(), v.end(), 0.0) / v.size(), var = 0.0;
@@ -68,25 +66,25 @@ void AdaptivePursuitSelector::updateSnap(const neat::GenerationReport& report) {
         }
     } else {                                                 // actualización tras cada evaluación
         generations_seen_++;
-        for (const auto& [op, f] : report.last_op_scores) {
-            int i = static_cast<int>(op);
-            double r = reward(f);
+        for (const auto& s : report.last_op_scores) {
+            int i = s.slotIndex();
+            double r = reward(s.fitness);
             q_[i] += cfg_.alpha * (r - q_[i]);
             pursue(static_cast<int>(std::max_element(q_.begin(), q_.end()) - q_.begin()));
             sum[i] += r; n[i]++;
         }
     }
-    for (int i = 0; i < kNumOperators; i++)
+    for (int i = 0; i < K_; i++)
         last_credit_[i] = n[i] ? sum[i] / n[i] : std::numeric_limits<double>::quiet_NaN();
 }
 
 void AdaptivePursuitSelector::update(const neat::GenerationReport& report) {
     if (cfg_.snap) { updateSnap(report); return; }
 
-    std::vector<double> sum(kNumOperators, 0.0), best(kNumOperators, 0.0);
-    std::vector<int> n(kNumOperators, 0);
+    std::vector<double> sum(K_, 0.0), best(K_, 0.0);
+    std::vector<int> n(K_, 0);
     for (const auto& o : report.outcomes) {
-        int i = static_cast<int>(o.op);
+        int i = o.slotIndex();
         double r = childReward(o, report.stats.best, report.stats.worst);
         sum[i] += r;
         best[i] = std::max(best[i], r);
@@ -94,7 +92,7 @@ void AdaptivePursuitSelector::update(const neat::GenerationReport& report) {
     }
 
     bool any = false;
-    for (int i = 0; i < kNumOperators; i++) {
+    for (int i = 0; i < K_; i++) {
         if (n[i] == 0) { last_credit_[i] = std::numeric_limits<double>::quiet_NaN(); continue; }
         double R = cfg_.extreme_credit ? best[i] : sum[i] / n[i];
         last_credit_[i] = R;

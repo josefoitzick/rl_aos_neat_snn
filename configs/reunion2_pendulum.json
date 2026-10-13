@@ -1,0 +1,10 @@
+{
+  "name": "reunion2_pendulum",
+  "description": "Segunda reunión (2026-09-29): curvas de aprendizaje NEAT estático vs NEAT + Adaptive Pursuit (crédito extremo, α=0,3, β=0,1; preliminar). E=10, reasignación 0,02, 10 especies objetivo. 11 réplicas.",
+  "base": ["--env", "pendulum", "--generations", "400", "--episodes", "10", "--test-episodes", "10",
+           "--final-episodes", "100", "--weight-replace-prob", "0.02", "--target-species", "10"],
+  "variants": {
+    "estatico": ["--selector", "static"],
+    "ap":       ["--selector", "ap", "--ap-alpha", "0.3", "--ap-beta", "0.1", "--ap-extreme"]
+  }
+}

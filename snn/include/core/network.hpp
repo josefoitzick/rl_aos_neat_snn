@@ -113,6 +113,8 @@ public:
     // Acceso directo (para análisis)
     const IzhikevichNeuron& getNeuron(int id) const { return neurons[id]; }
     void setNeuronType(int neuron_id, NeuronType type) { neurons[neuron_id].setNeuronType(type); }
+    void setNeuronParams(int neuron_id, double a, double b, double c, double d) { neurons[neuron_id].setParams(a, b, c, d); }
+    void setNeuronIOffset(int neuron_id, double offset) { neurons[neuron_id].setIOffset(offset); }
 
     // Aplica las mismas constantes de tiempo de decaimiento de conductancia
     // (AMPA/GABA) a TODAS las neuronas de la red. Llamar después de construir

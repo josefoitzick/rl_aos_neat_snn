@@ -1,0 +1,10 @@
+{
+  "name": "horizonte_static",
+  "description": "Horizonte de convergencia del NEAT estático calibrado: ¿cuántas generaciones hacen falta? (a 150 las curvas siguen subiendo). E=10, reasignación 0,02, 10 especies objetivo. 5 semillas.",
+  "base": ["--selector", "static", "--episodes", "10", "--test-episodes", "10", "--final-episodes", "100",
+           "--weight-replace-prob", "0.02", "--target-species", "10"],
+  "variants": {
+    "pendulum_400": ["--env", "pendulum", "--generations", "400"],
+    "acrobot_300":  ["--env", "acrobot", "--torque-scale", "0.2", "--generations", "300"]
+  }
+}

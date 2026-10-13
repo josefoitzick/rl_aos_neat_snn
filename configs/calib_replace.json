@@ -1,0 +1,14 @@
+{
+  "name": "calib_replace",
+  "description": "Calibración 3: probabilidad de reasignar un peso (vs perturbarlo) × especiación fija/dinámica. NEAT estático, Pendulum, E=10.",
+  "base": ["--env", "pendulum", "--selector", "static", "--generations", "150", "--episodes", "10",
+           "--test-episodes", "10", "--final-episodes", "100"],
+  "variants": {
+    "fijo_r00":     ["--weight-replace-prob", "0.0"],
+    "fijo_r02":     ["--weight-replace-prob", "0.02"],
+    "sp10_r00":     ["--target-species", "10", "--weight-replace-prob", "0.0"],
+    "sp10_r02":     ["--target-species", "10", "--weight-replace-prob", "0.02"],
+    "sp10_r05":     ["--target-species", "10", "--weight-replace-prob", "0.05"],
+    "sp10_r02_p10": ["--target-species", "10", "--weight-replace-prob", "0.02", "--weight-power", "10"]
+  }
+}

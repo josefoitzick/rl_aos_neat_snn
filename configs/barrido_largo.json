@@ -1,0 +1,234 @@
+{
+  "name": "barrido_largo",
+  "description": "Fase de comparación (docs/diseno_neat_ap.md §15.4): NEAT estático, 2000 generaciones, 10 semillas, en los entornos que pasaron el filtro A/B (más l2f, l2f-tiny y flag), con el protocolo actual (_fijo: 10 episodios de entrenamiento fijos) y con rotación de episodios por generación (_rot: --resample-train). La curva da también los cortes de 500 y 1000 generaciones. ant va aparte, con 1000 generaciones (configs/barrido_largo_ant.json), para tenerlo antes de la reunión del 2026-10-06.",
+  "base": [
+    "--selector",
+    "static",
+    "--generations",
+    "2000",
+    "--episodes",
+    "10",
+    "--test-episodes",
+    "10",
+    "--final-episodes",
+    "100",
+    "--weight-replace-prob",
+    "0.02",
+    "--target-species",
+    "10"
+  ],
+  "variants": {
+    "bottleneck_fijo": [
+      "--env",
+      "bottleneck"
+    ],
+    "bottleneck_rot": [
+      "--env",
+      "bottleneck",
+      "--resample-train"
+    ],
+    "car-track_fijo": [
+      "--env",
+      "car-track"
+    ],
+    "car-track_rot": [
+      "--env",
+      "car-track",
+      "--resample-train"
+    ],
+    "hyperdrone-moving-gate_reactivo_fijo": [
+      "--env",
+      "hyperdrone-moving-gate"
+    ],
+    "hyperdrone-moving-gate_reactivo_rot": [
+      "--env",
+      "hyperdrone-moving-gate",
+      "--resample-train"
+    ],
+    "acrobot-swingup_fijo": [
+      "--env",
+      "acrobot-swingup"
+    ],
+    "acrobot-swingup_rot": [
+      "--env",
+      "acrobot-swingup",
+      "--resample-train"
+    ],
+    "car_fijo": [
+      "--env",
+      "car"
+    ],
+    "car_rot": [
+      "--env",
+      "car",
+      "--resample-train"
+    ],
+    "l2f_fijo": [
+      "--env",
+      "l2f"
+    ],
+    "l2f_rot": [
+      "--env",
+      "l2f",
+      "--resample-train"
+    ],
+    "pendulum-multitask_fijo": [
+      "--env",
+      "pendulum-multitask"
+    ],
+    "pendulum-multitask_rot": [
+      "--env",
+      "pendulum-multitask",
+      "--resample-train"
+    ],
+    "pendulum-meta_memoria_fijo": [
+      "--env",
+      "pendulum-meta",
+      "--keep-state"
+    ],
+    "pendulum-meta_memoria_rot": [
+      "--env",
+      "pendulum-meta",
+      "--keep-state",
+      "--resample-train"
+    ],
+    "pendulum-meta_reactivo_fijo": [
+      "--env",
+      "pendulum-meta"
+    ],
+    "pendulum-meta_reactivo_rot": [
+      "--env",
+      "pendulum-meta",
+      "--resample-train"
+    ],
+    "pendulum-position_memoria_fijo": [
+      "--env",
+      "pendulum-position",
+      "--keep-state"
+    ],
+    "pendulum-position_memoria_rot": [
+      "--env",
+      "pendulum-position",
+      "--keep-state",
+      "--resample-train"
+    ],
+    "pendulum-position_reactivo_fijo": [
+      "--env",
+      "pendulum-position"
+    ],
+    "pendulum-position_reactivo_rot": [
+      "--env",
+      "pendulum-position",
+      "--resample-train"
+    ],
+    "pendulum-velocity_memoria_fijo": [
+      "--env",
+      "pendulum-velocity",
+      "--keep-state"
+    ],
+    "pendulum-velocity_memoria_rot": [
+      "--env",
+      "pendulum-velocity",
+      "--keep-state",
+      "--resample-train"
+    ],
+    "pendulum-velocity_reactivo_fijo": [
+      "--env",
+      "pendulum-velocity"
+    ],
+    "pendulum-velocity_reactivo_rot": [
+      "--env",
+      "pendulum-velocity",
+      "--resample-train"
+    ],
+    "pendulum_fijo": [
+      "--env",
+      "pendulum"
+    ],
+    "pendulum_rot": [
+      "--env",
+      "pendulum",
+      "--resample-train"
+    ],
+    "acrobot_t1_fijo": [
+      "--env",
+      "acrobot",
+      "--torque-scale",
+      "0.2"
+    ],
+    "acrobot_t1_rot": [
+      "--env",
+      "acrobot",
+      "--torque-scale",
+      "0.2",
+      "--resample-train"
+    ],
+    "flag_memoria_fijo": [
+      "--env",
+      "flag",
+      "--keep-state"
+    ],
+    "flag_memoria_rot": [
+      "--env",
+      "flag",
+      "--keep-state",
+      "--resample-train"
+    ],
+    "flag_reactivo_fijo": [
+      "--env",
+      "flag"
+    ],
+    "flag_reactivo_rot": [
+      "--env",
+      "flag",
+      "--resample-train"
+    ],
+    "l2f-tiny_fijo": [
+      "--env",
+      "l2f-tiny"
+    ],
+    "l2f-tiny_rot": [
+      "--env",
+      "l2f-tiny",
+      "--resample-train"
+    ],
+    "acrobot_t5_fijo": [
+      "--env",
+      "acrobot"
+    ],
+    "acrobot_t5_rot": [
+      "--env",
+      "acrobot",
+      "--resample-train"
+    ],
+    "memory_memoria_fijo": [
+      "--env",
+      "memory",
+      "--keep-state"
+    ],
+    "memory_memoria_rot": [
+      "--env",
+      "memory",
+      "--keep-state",
+      "--resample-train"
+    ],
+    "memory_reactivo_fijo": [
+      "--env",
+      "memory"
+    ],
+    "memory_reactivo_rot": [
+      "--env",
+      "memory",
+      "--resample-train"
+    ],
+    "reacher_fijo": [
+      "--env",
+      "reacher"
+    ],
+    "reacher_rot": [
+      "--env",
+      "reacher",
+      "--resample-train"
+    ]
+  }
+}
