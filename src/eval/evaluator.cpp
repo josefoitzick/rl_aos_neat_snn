@@ -1,7 +1,11 @@
 #include "evaluator.hpp"
 
 #include <algorithm>
+#include <map>
 #include <omp.h>
+#include <sstream>
+#include <stdexcept>
+#include <utility>
 
 namespace eval {
 
@@ -84,6 +88,31 @@ void evaluatePopulation(std::vector<neat::Genome>& genomes, const neat::NeatConf
         #pragma omp for schedule(dynamic)
         for (int i = 0; i < static_cast<int>(genomes.size()); i++)
             genomes[i].fitness = evaluateGenome(genomes[i], ncfg, *env, seeds, cfg);
+    }
+}
+
+void evaluatePopulations(const std::vector<PopulationJob>& jobs) {
+    std::vector<std::pair<int, int>> tasks;
+    std::vector<std::string> keys(jobs.size());
+    for (size_t j = 0; j < jobs.size(); j++) {
+        const PopulationJob& job = jobs[j];
+        if (!job.genomes || !job.ncfg || !job.seeds || !job.cfg) throw std::invalid_argument("evaluatePopulations: trabajo incompleto");
+        std::ostringstream key;
+        key << job.env_name << '|' << std::hexfloat << job.env_opt.torque_scale << '|' << job.env_opt.test_split;
+        keys[j] = key.str();
+        for (int i = 0; i < static_cast<int>(job.genomes->size()); i++) tasks.emplace_back(static_cast<int>(j), i);
+    }
+    #pragma omp parallel
+    {
+        std::map<std::string, std::unique_ptr<envs::ControlEnv>> envs_hilo;
+        #pragma omp for schedule(dynamic)
+        for (int t = 0; t < static_cast<int>(tasks.size()); t++) {
+            const PopulationJob& job = jobs[tasks[t].first];
+            auto& env = envs_hilo[keys[tasks[t].first]];
+            if (!env) env = envs::makeEnv(job.env_name, job.env_opt);
+            neat::Genome& g = (*job.genomes)[tasks[t].second];
+            g.fitness = evaluateGenome(g, *job.ncfg, *env, *job.seeds, *job.cfg);
+        }
     }
 }
 

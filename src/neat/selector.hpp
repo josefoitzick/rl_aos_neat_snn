@@ -1,6 +1,7 @@
 #ifndef NEAT_SELECTOR_HPP
 #define NEAT_SELECTOR_HPP
 
+#include <limits>
 #include <string>
 #include <vector>
 #include "genome.hpp"
@@ -34,7 +35,20 @@ struct PopulationStats {
     double compat_threshold = 0.0;   // δt usado en esta especiación
     int champion_hidden = 0, champion_conns = 0;
     double mean_hidden = 0.0, mean_conns = 0.0;
+    double largest_species_share = 0.0;   // fracción de la población en la especie más grande
 };
+
+// Crédito por rango de los hijos de un operador en una generación (--credito-rango de neat_control y estado del PPO)
+struct OpRank {
+    int n = 0;              // hijos producidos por el operador
+    double rank_sum = 0.0;  // suma de sus percentiles en la generación (0 = peor, 1 = mejor; empates promediados)
+    int top = 0;            // hijos con percentil ≥ 0,8
+    int fail = 0;           // hijos en que el operador no pudo aplicarse
+};
+
+// Percentil de cada genoma entre todos los de su generación (empates: percentil medio del grupo), agregado por
+// operador del catálogo (K posiciones). Requiere el fitness ya asignado.
+std::vector<OpRank> rankCredit(const std::vector<Genome>& genomes, size_t K);
 
 // Lo que ve el selector al cerrar una generación (tras evaluar).
 // Para el selector basado en estado (PPO), `stats` es la materia prima del estado.
@@ -44,6 +58,13 @@ struct GenerationReport {
     // (último operador del linaje, fitness) para TODOS los genomas con historia, incluidas las
     // élites reevaluadas: crédito "continuo" de SNAP-NEAT (Kohl & Miikkulainen 2012 §III-B)
     std::vector<LastOpScore> last_op_scores;
+
+    // Lo llena el ciclo que corre NEAT (no la población) antes de llamar a update(). Estático y AP lo ignoran;
+    // es la materia prima del estado del agente PPO (docs/diseno_ppo.md §2.3).
+    double champion_validation = std::numeric_limits<double>::quiet_NaN();  // validación del campeón de la generación
+    double best_validation = std::numeric_limits<double>::quiet_NaN();      // mejor validación hasta ahora (campeón vigente)
+    long evaluations = 0;                  // evaluaciones de genomas usadas, incluida esta generación
+    std::vector<OpRank> op_rank;           // crédito por rango por operador del catálogo
 };
 
 // Punto de enganche del AOS: NEAT solo pide el vector P y reporta resultados.

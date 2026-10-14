@@ -48,6 +48,21 @@ void evaluatePopulation(std::vector<neat::Genome>& genomes, const neat::NeatConf
                         const std::string& env_name, const envs::EnvOptions& env_opt,
                         const std::vector<uint64_t>& seeds, const EvalConfig& cfg);
 
+// Una población de las que evalúa evaluatePopulations
+struct PopulationJob {
+    std::vector<neat::Genome>* genomes = nullptr;
+    const neat::NeatConfig* ncfg = nullptr;
+    std::string env_name;
+    envs::EnvOptions env_opt;
+    const std::vector<uint64_t>* seeds = nullptr;
+    const EvalConfig* cfg = nullptr;
+};
+
+// Varias poblaciones (p. ej., las corridas en paralelo del entrenamiento de PPO) en una sola región paralela,
+// con reparto dinámico sobre todos los genomas y un entorno por hilo y por tipo de entorno. Cada genoma recibe
+// exactamente el fitness que le daría evaluatePopulation (mismo cálculo, mismas semillas).
+void evaluatePopulations(const std::vector<PopulationJob>& jobs);
+
 }  // namespace eval
 
 #endif

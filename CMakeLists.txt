@@ -42,6 +42,7 @@ target_compile_options(neat PRIVATE -Wall -Wextra)
 add_library(aos
     src/aos/adaptive_pursuit.cpp
     src/aos/factory.cpp
+    src/aos/features.cpp
 )
 target_link_libraries(aos PUBLIC neat)
 target_compile_options(aos PRIVATE -Wall -Wextra)
@@ -105,6 +106,24 @@ if(TARGET rl_tools)
   # (docs/diseno_neat_ap.md §15.4). Las políticas se compilan con scripts/compilar_politica_rl.sh.
   add_executable(rl_ref_eval src/experiment/rl_ref_eval.cpp)
   target_link_libraries(rl_ref_eval PRIVATE eval CLI11::CLI11 ${CMAKE_DL_LIBS})
+
+  # NEAT como entorno del agente PPO (NeatRun / NeatPool, docs/diseno_ppo.md §3.2–3.3) y su verificación V1
+  add_library(aos_entorno src/aos/neat_run.cpp)
+  target_link_libraries(aos_entorno PUBLIC eval aos)
+  target_compile_options(aos_entorno PRIVATE -Wall -Wextra)
+  add_executable(aos_neat_check src/experiment/aos_neat_check.cpp)
+  target_link_libraries(aos_neat_check PRIVATE aos_entorno CLI11::CLI11)
+
+  # Paso 3 del agente PPO: entrenamiento de PPO (RLtools) sobre NEAT (NeatPool), con checkpoints (docs/diseno_ppo.md §3–4)
+  add_executable(aos_ppo_train src/experiment/aos_ppo_train.cpp)
+  target_link_libraries(aos_ppo_train PRIVATE aos_entorno rl_tools CLI11::CLI11 OpenMP::OpenMP_CXX)
+  target_compile_options(aos_ppo_train PRIVATE -Wall -Wextra)
+
+  # Paso 1 del agente PPO: el PPO de RLtools sobre un AOS sintético, con el lote propio (docs/diseno_ppo.md §5)
+  add_executable(aos_toy_ppo src/experiment/aos_toy_ppo.cpp)
+  target_include_directories(aos_toy_ppo PRIVATE ${CMAKE_SOURCE_DIR}/src)
+  target_link_libraries(aos_toy_ppo PRIVATE rl_tools CLI11::CLI11 OpenMP::OpenMP_CXX)
+  target_compile_options(aos_toy_ppo PRIVATE -Wall -Wextra)
 endif()
 
 # Verificación NEAT + SNN en XOR (como la §4.2 de Stanley & Miikkulainen 2002)
@@ -118,11 +137,12 @@ if(BUILD_TESTING)
       tests/neat_tests.cpp
       tests/aos_tests.cpp
       tests/operadores_tests.cpp
+      tests/ppo_tests.cpp
   )
   target_link_libraries(tesis_tests PRIVATE snn_engine neat aos Catch2::Catch2WithMain)
   if(TARGET eval)
-    target_sources(tesis_tests PRIVATE tests/eval_tests.cpp)
-    target_link_libraries(tesis_tests PRIVATE eval)
+    target_sources(tesis_tests PRIVATE tests/eval_tests.cpp tests/neat_run_tests.cpp)
+    target_link_libraries(tesis_tests PRIVATE eval aos_entorno)
   endif()
   include(Catch)
   catch_discover_tests(tesis_tests)

@@ -56,6 +56,8 @@ Los entornos visuales necesitan las escenas ProcTHOR del dataset público `rl-to
 | `neat_control` | NEAT + SNN en un entorno de control (`--env`, `--selector static\|ap`, `--resample-train`, `--keep-state`, …) |
 | `env_probe` | Sonda de entornos: dimensiones, retornos de referencia, cotas de observación y costo de la SNN |
 | `rl_ref_eval` | Evalúa una política RL exportada en los mismos episodios que NEAT |
+| `aos_toy_ppo` | PPO de RLtools sobre un AOS sintético: valida y calibra el entrenador del agente antes de usarlo con NEAT |
+| `aos_neat_check` | NEAT como entorno del agente (corrida por ventanas de decisión, o varias en paralelo); se verifica bit a bit contra `neat_control` con `scripts/verificar_neat_run.sh` |
 | `render_bench` | Costo de renderizar los entornos visuales en CPU |
 | `xor_snn` | Verificación de NEAT + SNN en XOR |
 

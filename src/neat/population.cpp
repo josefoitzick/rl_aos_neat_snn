@@ -55,6 +55,9 @@ GenerationReport Population::endGeneration() {
     st.generation = generation_;
     st.num_species = static_cast<int>(species_.size());
     st.compat_threshold = compat_threshold_;
+    size_t largest = 0;
+    for (const Species& s : species_) largest = std::max(largest, s.members.size());
+    st.largest_species_share = genomes_.empty() ? 0.0 : static_cast<double>(largest) / genomes_.size();
     adaptThreshold();   // δt para la próxima especiación
 
     const int n = static_cast<int>(genomes_.size());
