@@ -1,0 +1,2 @@
+env,agents,obs_dim,act_dim,snn_inputs,snn_outputs,max_steps,random_mean,random_sd,random_len,zero_mean,zero_sd,zero_len,env_us_per_step,snn_ms_per_episode,snn_len
+ant,1,27,8,54,16,1000,-61.0189,101.25,172.15,999.248,5.42817,1000,180.107,273.402,172.15

@@ -1,0 +1,2 @@
+final_test=5.5923
+best_validation_test=6.80518

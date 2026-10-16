@@ -1,6 +1,7 @@
 #include "neat_run.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <exception>
 #include <filesystem>
@@ -30,6 +31,11 @@ FeatureConfig configRasgos(const NeatRunConfig& cfg, int n_in, int n_out) {
     f.target_species = cfg.ncfg.target_species > 0 ? cfg.ncfg.target_species : 10;
     f.compat_threshold0 = cfg.ncfg.compat_threshold;
     f.conns0 = n_in * n_out;
+    f.compacto = cfg.estado_compacto;
+    f.snn = cfg.estado_snn;
+    for (size_t k = 0; k < cfg.ncfg.catalog.size(); k++)
+        if (cfg.ncfg.catalog[k] == neat::Operator::MutateWeights) f.op_pesos = static_cast<int>(k);
+    f.potencia_base = cfg.ncfg.weight_perturb_power;
     return f;
 }
 
@@ -55,6 +61,7 @@ NeatRun::NeatRun(const NeatRunConfig& cfg, uint64_t seed)
     : cfg_(cfg),
       seed_(seed),
       probe_(envs::makeEnv(cfg.env_name, opcionesDePrueba(cfg.env_opt))),
+      test_opt_(opcionesDePrueba(cfg.env_opt)),
       pop_(cfg.ncfg, eval::numInputs(*probe_), eval::numOutputs(*probe_), seed),
       features_(configRasgos(cfg, eval::numInputs(*probe_), eval::numOutputs(*probe_))),
       bounds_(decisionBoundaries(cfg.generations, cfg.T)),
@@ -67,15 +74,52 @@ NeatRun::NeatRun(const NeatRunConfig& cfg, uint64_t seed)
     gen_t0_ = ahora();
 }
 
-void NeatRun::closeGeneration() {
-    if (closed_gen_ == gen_) throw std::logic_error("NeatRun: la generación ya está cerrada");
-    auto& G = pop_.genomes();
-    // Igual que neat_control con --resample-train: campeón por fitness de entrenamiento, validado en el stream 1;
-    // el campeón vigente es el de mejor validación
+size_t NeatRun::championIndex() const {
+    const auto& G = pop_.genomes();
     size_t champ = 0;
     for (size_t i = 1; i < G.size(); i++)
         if (G[i].fitness > G[champ].fitness) champ = i;
-    const double champ_test = eval::evaluateGenome(G[champ], cfg_.ncfg, *probe_, val_seeds_, cfg_.ecfg);
+    return champ;
+}
+
+eval::GenomeJob NeatRun::job(const neat::Genome& g, const std::vector<uint64_t>& seeds) const {
+    eval::GenomeJob j;
+    j.genome = &g;
+    j.ncfg = &cfg_.ncfg;
+    j.env_name = cfg_.env_name;
+    j.env_opt = test_opt_;
+    j.seeds = &seeds;
+    j.cfg = &cfg_.ecfg;
+    return j;
+}
+
+eval::GenomeJob NeatRun::validationJob() {
+    eval::GenomeJob j = job(pop_.genomes()[championIndex()], val_seeds_);
+    if (cfg_.estado_snn) {
+        act_val_ = eval::ActividadSNN{};
+        j.actividad = &act_val_;
+    }
+    return j;
+}
+eval::GenomeJob NeatRun::phiJob() const { return job(best_val_genome_, reward_seeds_); }
+eval::GenomeJob NeatRun::finalJob() const { return job(best_val_genome_, final_seeds_); }
+
+void NeatRun::closeGeneration() {
+    if (closed_gen_ == gen_) throw std::logic_error("NeatRun: la generación ya está cerrada");
+    closeGeneration(eval::evaluateGenomes({validationJob()})[0]);
+}
+
+void NeatRun::closeGeneration(double champ_test) {
+    if (closed_gen_ == gen_) throw std::logic_error("NeatRun: la generación ya está cerrada");
+    auto& G = pop_.genomes();
+    // Igual que neat_control con --resample-train: campeón por fitness de entrenamiento, validado en el stream 1
+    // (champ_test); el campeón vigente es el de mejor validación
+    const size_t champ = championIndex();
+    if (cfg_.estado_snn) {   // actividad medida en la validación de este mismo campeón (validationJob)
+        const auto red = G[champ].buildNetwork(cfg_.ncfg);
+        const eval::ResumenActividad r = eval::resumirActividad(act_val_, *red);
+        features_.addActividad({r.ocultas_mudas, r.ocultas_saturadas, r.entradas_mudas, r.salidas_mudas, r.accion_saturada});
+    }
     if (champ_test > best_val_) {
         best_val_ = champ_test;
         best_val_genome_ = G[champ];
@@ -93,10 +137,14 @@ void NeatRun::closeGeneration() {
     if (csv_.is_open()) writeCsvRow(champ_test);
 }
 
-void NeatRun::reproduce(const std::vector<double>& P) {
+void NeatRun::reproduce(const std::vector<double>& P, const neat::Variacion* v) {
     if (closed_gen_ != gen_) throw std::logic_error("NeatRun: la generación en curso no está cerrada");
     if (done()) throw std::logic_error("NeatRun: la corrida terminó");
     if (P.size() != cfg_.ncfg.catalog.size()) throw std::invalid_argument("NeatRun: P de tamaño distinto del catálogo");
+    if (v) {
+        pop_.setVariacion(*v);
+        features_.setPotencia(v->weight_perturb_power);
+    }
     pop_.reproduce(P);
     gen_++;
     gen_seeds_ = eval::episodeSeeds(seed_, cfg_.episodes, 1000 + static_cast<uint64_t>(gen_));
@@ -109,11 +157,16 @@ bool NeatRun::needsGeneration() const {
 }
 
 void NeatRun::closeWindow() {
+    closeWindow(needsPhi() ? eval::evaluateGenomes({phiJob()})[0] : std::numeric_limits<double>::quiet_NaN());
+}
+
+void NeatRun::closeWindow(double phi_return) {
     if (closed_gen_ != gen_) throw std::logic_error("NeatRun: la generación en curso no está cerrada");
     if (windows_ > cfg_.T || closed_gen_ != bounds_[windows_]) throw std::logic_error("NeatRun: la ventana no está en su frontera");
+    const bool medir = needsPhi();
+    if (medir && std::isnan(phi_return)) throw std::logic_error("NeatRun: falta el retorno de Φ");
     obs_ = features_.closeWindow();
-    if (champion_changed_ && cfg_.reward_episodes > 0)
-        phi_ = features_.sigma(eval::evaluateGenome(best_val_genome_, cfg_.ncfg, *probe_, reward_seeds_, cfg_.ecfg));
+    if (medir) phi_ = features_.sigma(phi_return);
     champion_changed_ = false;
     windows_++;
 }
@@ -137,7 +190,7 @@ void NeatRun::advanceSequential(const std::vector<double>& P) {
 }
 
 double NeatRun::finalTest() {
-    return eval::evaluateGenome(best_val_genome_, cfg_.ncfg, *probe_, final_seeds_, cfg_.ecfg);
+    return eval::evaluateGenomes({finalJob()})[0];
 }
 
 void NeatRun::enableCsv(const std::string& path, bool credito_rango, const std::vector<double>& P_inicial) {
@@ -189,12 +242,23 @@ void NeatRun::writeCsvRow(double champ_test) {
 }
 
 NeatPool::NeatPool(const NeatRunConfig& cfg, int slots, uint64_t seed_base, double w_area, double reward_scale, bool final_test)
-    : cfg_(cfg), runs_(slots), ret_(slots, 0.0), next_seed_(seed_base), w_area_(w_area), scale_(reward_scale),
-      final_test_(final_test), p_sum_(cfg.ncfg.catalog.size(), 0.0) {
-    if (slots < 1) throw std::invalid_argument("NeatPool: se necesita al menos una ranura");
+    : NeatPool(std::vector<NeatRunConfig>(slots < 1 ? 0 : slots, cfg), seed_base, w_area, reward_scale, final_test) {}
+
+NeatPool::NeatPool(const std::vector<NeatRunConfig>& cfgs, uint64_t seed_base, double w_area, double reward_scale, bool final_test)
+    : cfg_(cfgs.empty() ? NeatRunConfig{} : cfgs.front()), slot_cfg_(cfgs), runs_(cfgs.size()), ret_(cfgs.size(), 0.0),
+      next_seed_(seed_base), w_area_(w_area), scale_(reward_scale), final_test_(final_test),
+      p_sum_(cfg_.ncfg.catalog.size(), 0.0) {
+    if (cfgs.empty()) throw std::invalid_argument("NeatPool: se necesita al menos una ranura");
+    for (const auto& c : cfgs)
+        if (c.T != cfg_.T || c.ncfg.catalog.size() != cfg_.ncfg.catalog.size())
+            throw std::invalid_argument("NeatPool: todas las ranuras deben tener el mismo T y el mismo tamaño de catálogo");
 }
 
-int NeatPool::obsDim() const { return 14 + 2 * static_cast<int>(cfg_.ncfg.catalog.size()); }
+int NeatPool::obsDim() const {
+    return cfg_.estado_snn        ? FeatureExtractor::DIM_SNN
+           : cfg_.estado_compacto ? FeatureExtractor::DIM_COMPACTO
+                                  : 14 + 2 * static_cast<int>(cfg_.ncfg.catalog.size());
+}
 
 void NeatPool::evaluateCurrent(const std::vector<int>& slots) {
     std::vector<eval::PopulationJob> jobs;
@@ -212,11 +276,32 @@ void NeatPool::evaluateCurrent(const std::vector<int>& slots) {
     eval::evaluatePopulations(jobs);
 }
 
+void NeatPool::closeGenerations(const std::vector<int>& slots) {
+    std::vector<eval::GenomeJob> jobs;
+    for (int s : slots) jobs.push_back(runs_[s]->validationJob());
+    const std::vector<double> v = eval::evaluateGenomes(jobs);
+    paraleloSeguro(static_cast<int>(slots.size()), [&](int i) { runs_[slots[i]]->closeGeneration(v[i]); });
+}
+
+void NeatPool::closeWindows(const std::vector<int>& slots) {
+    std::vector<eval::GenomeJob> jobs;
+    std::vector<int> k(slots.size(), -1);
+    for (size_t i = 0; i < slots.size(); i++)
+        if (runs_[slots[i]]->needsPhi()) {
+            k[i] = static_cast<int>(jobs.size());
+            jobs.push_back(runs_[slots[i]]->phiJob());
+        }
+    const std::vector<double> J = eval::evaluateGenomes(jobs);
+    paraleloSeguro(static_cast<int>(slots.size()), [&](int i) {
+        runs_[slots[i]]->closeWindow(k[i] >= 0 ? J[k[i]] : std::numeric_limits<double>::quiet_NaN());
+    });
+}
+
 void NeatPool::start(const std::vector<int>& slots) {
     for (int s : slots) {
         if (s < 0 || s >= this->slots()) throw std::out_of_range("NeatPool::start: ranura inexistente");
         if (runs_[s] && !runs_[s]->done()) throw std::logic_error("NeatPool::start: se reinicia una corrida que no terminó");
-        runs_[s] = std::make_unique<NeatRun>(cfg_, next_seed_++);
+        runs_[s] = std::make_unique<NeatRun>(slot_cfg_[s], next_seed_++);
         if (!csv_dir_.empty()) {
             char sub[32];
             std::snprintf(sub, sizeof sub, "seed_%02llu", static_cast<unsigned long long>(runs_[s]->seed()));
@@ -229,27 +314,28 @@ void NeatPool::start(const std::vector<int>& slots) {
     }
     if (slots.empty()) return;
     evaluateCurrent(slots);
-    paraleloSeguro(static_cast<int>(slots.size()), [&](int i) {
-        runs_[slots[i]]->closeGeneration();
-        runs_[slots[i]]->closeWindow();
-    });
+    closeGenerations(slots);
+    closeWindows(slots);
 }
 
-void NeatPool::enableDecisionLog(const std::string& path, bool append) {
+void NeatPool::enableDecisionLog(const std::string& path, bool append, bool con_intensidades) {
+    dec_intensidades_ = con_intensidades;
     const bool header = !append || !std::filesystem::exists(path) || std::filesystem::file_size(path) == 0;
     dec_log_.open(path, append ? std::ios::app : std::ios::trunc);
     if (!dec_log_) throw std::runtime_error("NeatPool: no se pudo abrir " + path);
     if (header) {
         dec_log_ << "semilla,t,generacion,evaluaciones,phi_antes,phi,recompensa";
         for (size_t k = 0; k < cfg_.ncfg.catalog.size(); k++) dec_log_ << ",p" << k;
+        if (dec_intensidades_) dec_log_ << ",potencia,reasignar,solo_mutacion";
         for (int d = 0; d < obsDim(); d++) dec_log_ << ",o" << d;
         dec_log_ << "\n";
     }
 }
 
-void NeatPool::advance(const std::vector<std::vector<double>>& P) {
+void NeatPool::advance(const std::vector<std::vector<double>>& P, const std::vector<neat::Variacion>* V) {
     const int n = slots();
     if (static_cast<int>(P.size()) != n) throw std::invalid_argument("NeatPool::advance: falta P por ranura");
+    if (V && static_cast<int>(V->size()) != n) throw std::invalid_argument("NeatPool::advance: faltan intensidades por ranura");
     std::vector<std::vector<float>> obs0;
     std::vector<int> t0;
     if (dec_log_.is_open())
@@ -270,22 +356,37 @@ void NeatPool::advance(const std::vector<std::vector<double>>& P) {
         for (int s = 0; s < n; s++)
             if (runs_[s]->needsGeneration()) act.push_back(s);
         if (act.empty()) break;
-        paraleloSeguro(static_cast<int>(act.size()), [&](int i) { runs_[act[i]]->reproduce(P[act[i]]); });
+        paraleloSeguro(static_cast<int>(act.size()), [&](int i) {
+            runs_[act[i]]->reproduce(P[act[i]], V ? &(*V)[act[i]] : nullptr);
+        });
         evaluateCurrent(act);
-        paraleloSeguro(static_cast<int>(act.size()), [&](int i) { runs_[act[i]]->closeGeneration(); });
+        closeGenerations(act);
     }
-    paraleloSeguro(n, [&](int s) { runs_[s]->closeWindow(); });
+    std::vector<int> todas(n);
+    for (int s = 0; s < n; s++) todas[s] = s;
+    closeWindows(todas);
     for (int s = 0; s < n; s++) {
         const double r = reward(phi0[s], runs_[s]->phi());
         ret_[s] += r;
         for (size_t k = 0; k < p_sum_.size(); k++) p_sum_[k] += P[s][k];
         p_count_++;
+        if (V) {
+            const neat::Variacion& v = (*V)[s];
+            v_sum_[0] += v.weight_perturb_power;
+            v_sum_[1] += 1.0 - v.weight_perturb_prob;
+            v_sum_[2] += v.mutation_only_fraction;
+            v_count_++;
+        }
         n_decisions_++;
         if (dec_log_.is_open()) {
             const NeatRun& run = *runs_[s];
             dec_log_ << run.seed() << "," << t0[s] << "," << run.generation() << "," << run.lastReport().evaluations << "," << phi0[s]
                      << "," << run.phi() << "," << r;
             for (double p : P[s]) dec_log_ << "," << p;
+            if (dec_intensidades_) {
+                const neat::Variacion v = V ? (*V)[s] : run.variacion();
+                dec_log_ << "," << v.weight_perturb_power << "," << 1.0 - v.weight_perturb_prob << "," << v.mutation_only_fraction;
+            }
             for (float o : obs0[s]) dec_log_ << "," << o;
             dec_log_ << "\n";
         }
@@ -295,11 +396,15 @@ void NeatPool::advance(const std::vector<std::vector<double>>& P) {
     for (int s = 0; s < n; s++)
         if (runs_[s]->done()) fin.push_back(s);
     std::vector<double> ft(fin.size(), std::numeric_limits<double>::quiet_NaN());
-    if (final_test_) paraleloSeguro(static_cast<int>(fin.size()), [&](int i) { ft[i] = runs_[fin[i]]->finalTest(); });
+    if (final_test_) {
+        std::vector<eval::GenomeJob> jobs;
+        for (int s : fin) jobs.push_back(runs_[s]->finalJob());
+        ft = eval::evaluateGenomes(jobs);
+    }
     for (size_t i = 0; i < fin.size(); i++) {
         NeatRun& r = *runs_[fin[i]];
         finished_.push_back({r.seed(), ft[i], final_test_ ? r.sigma(ft[i]) : std::numeric_limits<double>::quiet_NaN(), ret_[fin[i]],
-                             r.sigma(r.bestValidation())});
+                             r.sigma(r.bestValidation()), r.config().env_name});
         n_finished_++;
     }
 }
@@ -308,6 +413,15 @@ std::vector<NeatPool::Finished> NeatPool::takeFinished() {
     auto f = std::move(finished_);
     finished_.clear();
     return f;
+}
+
+std::vector<double> NeatPool::takeMeanVariacion() {
+    std::vector<double> m;
+    if (v_count_ > 0)
+        for (double x : v_sum_) m.push_back(x / v_count_);
+    std::fill(v_sum_.begin(), v_sum_.end(), 0.0);
+    v_count_ = 0;
+    return m;
 }
 
 std::vector<double> NeatPool::takeMeanP() {

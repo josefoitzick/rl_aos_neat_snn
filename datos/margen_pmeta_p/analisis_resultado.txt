@@ -1,0 +1,4 @@
+192 semillas: c0_10 0.3630, mw_alto 0.4691, como_ajustado 0.4829
+  mw_alto−c0_10: Δ +0.1061 (ee 0.0156), gana 138/192, p 0.0000, Holm 0.0000
+  como_ajustado−c0_10: Δ +0.1199 (ee 0.0164), gana 138/192, p 0.0000, Holm 0.0000
+25b acrobot-swingup (40 semillas): c0_10 0.5140, como_ajustado 0.5486; Δ +0.0347 (ee 0.0079), gana 34/40, Wilcoxon p 0.0001

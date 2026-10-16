@@ -1,0 +1,5 @@
+env,agents,obs_dim,act_dim,snn_inputs,snn_outputs,max_steps,random_mean,random_sd,random_len,zero_mean,zero_sd,zero_len,env_us_per_step,snn_ms_per_episode,snn_len
+reacher-visual,1,768,2,768,4,40,-35.0038,22.3519,33.15,-35.7015,23.6635,34.15,6.90677,19.197,33.15
+reacher-visual-memory,1,768,2,768,4,40,-35.0038,22.3519,33.15,-35.7015,23.6635,34.15,1.21012,32.388,33.15
+reacher-visual-memory-hard,1,768,2,768,4,80,-154.597,76.0795,73.7,-153.426,59.923,80,1.75877,64.6546,73.7
+ant,1,27,8,54,16,1000,-61.0189,101.25,172.15,999.248,5.42817,1000,179.481,272.952,172.15

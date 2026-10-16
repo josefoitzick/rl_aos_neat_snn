@@ -26,6 +26,9 @@ struct NodeGene {
     double gain = 1.0;     // E1: multiplica la corriente de entrada (solo entradas)
     bool custom = false;   // B2: (a, b, c, d) propios en vez de los de la familia
     double abcd[4] = {0.0, 0.0, 0.0, 0.0};
+    // Tasa de disparo (espigas por paso de simulación) en la última evaluación del genoma; < 0: desconocida.
+    // Solo la escriben el evaluador (con NeatConfig::medir_actividad) y la usan F1–F4; los hijos la heredan del padre.
+    double tasa = -1.0;
 };
 
 // Peso con signo: w >= 0 → sinapsis excitatoria, w < 0 → inhibitoria; magnitud |w|.
@@ -83,6 +86,13 @@ public:
     bool mutateDuplicateNode(const NeatConfig& cfg, InnovationTracker& innov, Rng& rng);
     bool mutateDeleteConnection(const NeatConfig& cfg, Rng& rng);
     bool mutateDeleteSimpleNode(const NeatConfig& cfg, InnovationTracker& innov, Rng& rng);
+    bool mutateWakeNeuron(NodeRole role, const NeatConfig& cfg, Rng& rng);   // F1 (salidas) y F2 (ocultas)
+    bool mutateCalmSaturated(const NeatConfig& cfg, Rng& rng);
+    bool mutateGainMuteInputs(const NeatConfig& cfg, Rng& rng);
+    void escalarEntradasExcitatorias(int id, double factor, const NeatConfig& cfg);
+
+    // Escribe la tasa de cada neurona desde las espigas contadas en la red (índices de buildNetwork) y los pasos
+    void asignarTasas(const std::vector<long>& espigas, long pasos);
 
     // Fenotipo: red de espigas lista para simular (entradas, salidas y ocultas en ese orden).
     std::unique_ptr<Network> buildNetwork(const NeatConfig& cfg) const;

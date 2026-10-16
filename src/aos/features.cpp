@@ -6,12 +6,25 @@
 namespace aos {
 
 FeatureExtractor::FeatureExtractor(const FeatureConfig& cfg)
-    : cfg_(cfg), win_rank_(cfg.K, 0.0), win_n_(cfg.K, 0.0), win_fail_(cfg.K, 0.0), credit_(cfg.K, 0.0), fail_(cfg.K, 0.0) {
+    : cfg_(cfg), win_rank_(cfg.K, 0.0), win_n_(cfg.K, 0.0), win_fail_(cfg.K, 0.0), credit_(cfg.K, 0.0), fail_(cfg.K, 0.0),
+      potencia_(cfg.potencia_base) {
     if (cfg_.K < 1) throw std::invalid_argument("FeatureExtractor: K < 1");
     if (cfg_.budget < 1) throw std::invalid_argument("FeatureExtractor: presupuesto < 1");
     if (!(cfg_.ref_rl != cfg_.ref_trivial)) throw std::invalid_argument("FeatureExtractor: J_RL igual a J_trivial");
     if (!(cfg_.compat_threshold0 > 0.0)) throw std::invalid_argument("FeatureExtractor: δt inicial no positivo");
     if (cfg_.target_species < 1) throw std::invalid_argument("FeatureExtractor: especies objetivo < 1");
+    if (cfg_.op_pesos >= cfg_.K) throw std::invalid_argument("FeatureExtractor: índice de mutate_weights fuera del catálogo");
+    if (!(cfg_.potencia_base > 0.0)) throw std::invalid_argument("FeatureExtractor: potencia base no positiva");
+    if (cfg_.snn && cfg_.compacto) throw std::invalid_argument("FeatureExtractor: estado SNN y compacto a la vez");
+}
+
+void FeatureExtractor::addActividad(const Actividad& a) {
+    act_sum_.ocultas_mudas += a.ocultas_mudas;
+    act_sum_.ocultas_saturadas += a.ocultas_saturadas;
+    act_sum_.entradas_mudas += a.entradas_mudas;
+    act_sum_.salidas_mudas += a.salidas_mudas;
+    act_sum_.accion_saturada += a.accion_saturada;
+    act_n_++;
 }
 
 void FeatureExtractor::addGeneration(const neat::GenerationReport& rep) {
@@ -58,6 +71,38 @@ std::vector<float> FeatureExtractor::closeWindow() {
     std::vector<float> o;
     o.reserve(dim());
     const double conns0 = cfg_.conns0 + 1.0;
+    if (cfg_.snn) {
+        if (act_n_ == 0) throw std::logic_error("FeatureExtractor: estado SNN sin actividad medida en la ventana");
+        o.push_back(static_cast<float>(tau_));
+        o.push_back(static_cast<float>(vstar));
+        o.push_back(static_cast<float>(dvstar));
+        o.push_back(static_cast<float>(tau_ - tau_improve_));
+        o.push_back(static_cast<float>(std::log((last_.champion_conns + 1.0) / conns0)));
+        o.push_back(static_cast<float>(act_sum_.ocultas_mudas / act_n_));
+        o.push_back(static_cast<float>(act_sum_.ocultas_saturadas / act_n_));
+        o.push_back(static_cast<float>(act_sum_.entradas_mudas / act_n_));
+        o.push_back(static_cast<float>(act_sum_.salidas_mudas / act_n_));
+        o.push_back(static_cast<float>(act_sum_.accion_saturada / act_n_));
+        act_sum_ = Actividad{};
+        act_n_ = 0;
+        for (float v : o)
+            if (!std::isfinite(v)) throw std::runtime_error("FeatureExtractor: rasgo no finito");
+        return o;
+    }
+    if (cfg_.compacto) {
+        o.push_back(static_cast<float>(tau_));
+        o.push_back(static_cast<float>(vstar));
+        o.push_back(static_cast<float>(dvstar));
+        o.push_back(static_cast<float>(tau_ - tau_improve_));
+        o.push_back(static_cast<float>(last_.stdev / (cfg_.ref_rl - cfg_.ref_trivial)));
+        o.push_back(static_cast<float>(std::log(last_.compat_threshold / cfg_.compat_threshold0)));
+        o.push_back(static_cast<float>(std::log((last_.champion_conns + 1.0) / conns0)));
+        o.push_back(static_cast<float>(cfg_.op_pesos >= 0 ? credit_[cfg_.op_pesos] : 0.0));
+        o.push_back(static_cast<float>(std::log(potencia_ / cfg_.potencia_base)));
+        for (float v : o)
+            if (!std::isfinite(v)) throw std::runtime_error("FeatureExtractor: rasgo no finito");
+        return o;
+    }
     o.push_back(static_cast<float>(tau_));
     o.push_back(static_cast<float>(vstar));
     o.push_back(static_cast<float>(vgen));

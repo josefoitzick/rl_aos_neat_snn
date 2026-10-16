@@ -13,6 +13,11 @@ Por par (adaptativa vs línea base), con las réplicas de un mismo entorno:
                   (las corridas que no lo alcanzan quedan censuradas, no se descartan)
 Todos los p-valores del entorno se corrigen con Holm (α = 0,05).
 
+Con --pareado (números aleatorios comunes: todas las configuraciones usan las mismas semillas, que fijan también los
+episodios de entrenamiento, validación y test), eficacia y complejidad se comparan por semilla con la prueba de rangos
+con signo de Wilcoxon, y el tamaño de efecto es la versión pareada de Â12: P(A_s > B_s) + 0,5·P(A_s = B_s).
+Estabilidad (Brown-Forsythe) y eficiencia (log-rank) no cambian.
+
 Umbral (fijado ANTES de las réplicas finales): --threshold T absoluto, o normalizado desde corridas
 preliminares (--threshold-from DIR --threshold-frac q):
     umbral = f_ref + q·(f_best − f_ref)
@@ -78,6 +83,12 @@ def a12(x, y):
 def a12_magnitude(a):
     d = abs(a - 0.5)
     return "despreciable" if d < 0.06 else "pequeño" if d < 0.14 else "mediano" if d < 0.21 else "grande"
+
+
+def a12_pareado(x, y):
+    """Â12 pareado: fracción de semillas en que A supera a B (empates a medias)."""
+    d = np.asarray(x, float) - np.asarray(y, float)
+    return (np.sum(d > 0) + 0.5 * np.sum(d == 0)) / len(d)
 
 
 def holm(pvals):
@@ -165,6 +176,7 @@ def main():
     ap.add_argument("--threshold", type=float)
     ap.add_argument("--threshold-from", help="corridas preliminares para el umbral normalizado")
     ap.add_argument("--threshold-frac", type=float, default=0.95)
+    ap.add_argument("--pareado", action="store_true", help="Wilcoxon de rangos con signo por semilla (CRN)")
     args = ap.parse_args()
 
     root = Path(args.experiment).expanduser()
@@ -189,10 +201,18 @@ def main():
             if a == b:
                 continue
             A, B = runs[runs["variant"] == a], runs[runs["variant"] == b]
+            par = A.merge(B, on="seed", suffixes=("_a", "_b")) if args.pareado else None
+            if args.pareado and len(par) < len(A):
+                print(f"aviso: {a} y {b} comparten {len(par)} de {len(A)} semillas; se comparan solo esas")
             for metric, col in [("eficacia: test final", "final_test"), ("complejidad: ocultas", "hidden"),
                                 ("complejidad: conexiones", "conns")]:
-                p = stats.mannwhitneyu(A[col], B[col], alternative="two-sided").pvalue
-                rows.append([a, b, metric, "Mann-Whitney U", A[col].median(), B[col].median(), p, a12(A[col], B[col])])
+                if args.pareado:
+                    xa, xb = par[col + "_a"].to_numpy(float), par[col + "_b"].to_numpy(float)
+                    p = stats.wilcoxon(xa, xb, alternative="two-sided").pvalue if np.any(xa != xb) else 1.0
+                    rows.append([a, b, metric, "Wilcoxon (pareado)", np.median(xa), np.median(xb), p, a12_pareado(xa, xb)])
+                else:
+                    p = stats.mannwhitneyu(A[col], B[col], alternative="two-sided").pvalue
+                    rows.append([a, b, metric, "Mann-Whitney U", A[col].median(), B[col].median(), p, a12(A[col], B[col])])
             p = stats.levene(A["final_test"], B["final_test"], center="median").pvalue
             rows.append([a, b, "estabilidad: dispersión test final", "Brown-Forsythe",
                          A["final_test"].std(), B["final_test"].std(), p, np.nan])

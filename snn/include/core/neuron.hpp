@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <random>
+#include <limits>
 
 // Los primeros 6 son las clases corticales/talámicas clásicas de Izhikevich
 // (Fig. 2 de Izhikevich, "Which Model to Use for Cortical Spiking Neurons?",
@@ -65,6 +66,10 @@ private:
     double g_inh;   // Conductancia inhibitoria (GABA)
     double tau_exc; // Constante de tiempo AMPA (ms)
     double tau_inh; // Constante de tiempo GABA (ms)
+    // Factores de decaimiento exp(-dt/tau) en caché: solo cambian con dt o tau (NaN = recalcular)
+    double decay_dt  = std::numeric_limits<double>::quiet_NaN();
+    double decay_exc = 0.0;
+    double decay_inh = 0.0;
 
     static constexpr double V_THRESHOLD = 30.0;
     // Red de seguridad numérica (NO el límite de disparo — eso sigue siendo
@@ -124,8 +129,8 @@ public:
     void setRecovery(double recovery) { u = recovery; }
     void setIOffset(double offset) { i_offset = offset; }
     void setNoise(double n) { noise = n; }
-    void setTauExc(double tau) { tau_exc = tau; }
-    void setTauInh(double tau) { tau_inh = tau; }
+    void setTauExc(double tau) { tau_exc = tau; decay_dt = std::numeric_limits<double>::quiet_NaN(); }
+    void setTauInh(double tau) { tau_inh = tau; decay_dt = std::numeric_limits<double>::quiet_NaN(); }
 
     double getIOffset() const { return i_offset; }
     double getNoise() const { return noise; }

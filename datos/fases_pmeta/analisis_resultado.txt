@@ -1,0 +1,4 @@
+192 semillas: c0 0.3420, mw_alto 0.4645, fases 0.4744
+  fases−mw_alto: Δ +0.0099 (ee 0.0162), gana 102/192, p 0.4943, Holm 0.4943
+  fases−c0: Δ +0.1323 (ee 0.0157), gana 140/192, p 2.356e-13, Holm 7.069e-13
+  mw_alto−c0: Δ +0.1225 (ee 0.0161), gana 135/192, p 1.143e-11, Holm 2.285e-11

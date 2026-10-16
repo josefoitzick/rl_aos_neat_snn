@@ -23,6 +23,22 @@
 // 14 … 14+K−1           crédito_k: media móvil (η por ventana) del percentil de los hijos del operador k − 0,5
 // 14+K … 14+2K−1        fallo_k: media móvil de la fracción de aplicaciones fallidas del operador k
 // σ(J) = (J − J_trivial) / (J_RL − J_trivial) es el score de siempre.
+//
+// Estado compacto (FeatureConfig::compacto, plan B): 9 rasgos genéricos, sin los 2K por operador, que son los más
+// ruidosos (el crédito inmediato es puro ruido en bottleneck y l2f) y con un solo rasgo de complejidad:
+//  0  τ · 1 V* · 2 ΔV* · 3 estancamiento · 4 dispersión · 5 umbral δt · 6 conex. campeón (como arriba)
+//  7  crédito de mutar pesos   media móvil del percentil de sus hijos − 0,5 (0 si el catálogo no lo tiene)
+//  8  potencia relativa        log(potencia de la perturbación de pesos vigente / potencia base)
+//
+// Estado SNN (FeatureConfig::snn, docs/experimentos/18_analisis_efectos_acciones.md): 10 rasgos, centrados en lo que modula
+// los efectos medidos (momento, tamaño y nivel) y en la actividad de la red, medida en el campeón durante su validación:
+//  0  τ · 1 V* · 2 ΔV* · 3 estancamiento · 4 conex. campeón (como arriba)
+//  5  ocultas mudas        fracción de neuronas ocultas que no dispararon          (media de la ventana)
+//  6  ocultas saturadas    fracción con tasa ≥ 0,2 espigas por paso
+//  7  entradas mudas       fracción de neuronas de entrada que no dispararon
+//  8  salidas mudas        fracción de acciones nulas porque ambas salidas callaron
+//  9  acción saturada      fracción de acciones en el tope (±1)
+#include <cmath>
 #include <vector>
 #include "neat/selector.hpp"
 
@@ -37,12 +53,18 @@ struct FeatureConfig {
     double compat_threshold0 = 3.0; // δt inicial
     int conns0 = 1;                 // conexiones de la topología inicial (entradas × salidas)
     double ema = 0.5;               // η de la media móvil del crédito y de los fallos, por ventana
+    bool compacto = false;          // estado compacto de 9 rasgos (plan B)
+    bool snn = false;               // estado SNN de 10 rasgos (actividad de la red)
+    int op_pesos = -1;              // índice de mutate_weights en el catálogo (-1: no está)
+    double potencia_base = 5.0;     // potencia de la perturbación de pesos de la configuración
 };
 
 class FeatureExtractor {
 public:
+    static constexpr int DIM_COMPACTO = 9;
+    static constexpr int DIM_SNN = 10;
     explicit FeatureExtractor(const FeatureConfig& cfg);
-    int dim() const { return 14 + 2 * cfg_.K; }
+    int dim() const { return cfg_.snn ? DIM_SNN : cfg_.compacto ? DIM_COMPACTO : 14 + 2 * cfg_.K; }
     const FeatureConfig& config() const { return cfg_; }
     double sigma(double J) const { return (J - cfg_.ref_trivial) / (cfg_.ref_rl - cfg_.ref_trivial); }
 
@@ -50,6 +72,13 @@ public:
     void addGeneration(const neat::GenerationReport& rep);
     // Cierra la ventana de la decisión: devuelve la observación y empieza una ventana nueva
     std::vector<float> closeWindow();
+    // Potencia de la perturbación de pesos vigente (la fija el agente en el plan B); rasgo 8 del estado compacto
+    void setPotencia(double p) { potencia_ = p; }
+    // Actividad del campeón de una generación (estado SNN): se promedia en la ventana
+    struct Actividad {
+        double ocultas_mudas = 0.0, ocultas_saturadas = 0.0, entradas_mudas = 0.0, salidas_mudas = 0.0, accion_saturada = 0.0;
+    };
+    void addActividad(const Actividad& a);
 
 private:
     FeatureConfig cfg_;
@@ -68,6 +97,9 @@ private:
     bool any_best_ = false;
     double tau_improve_ = 0.0;
     std::vector<double> credit_, fail_;
+    double potencia_;
+    Actividad act_sum_;
+    int act_n_ = 0;
 };
 
 }  // namespace aos

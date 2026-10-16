@@ -413,3 +413,73 @@ TEST_CASE("Determinismo con el catálogo completo") {
     REQUIRE(run(5) == run(5));
     REQUIRE(run(5) != run(6));
 }
+
+// ───────────── F1–F4: dirigidos por la actividad de la SNN (docs/experimentos/22_operadores_actividad.md) ─────────────
+
+TEST_CASE("asignarTasas sigue el orden de buildNetwork (entradas, salidas, ocultas)", "[actividad]") {
+    NeatConfig cfg; InnovationTracker tr; Rng rng(3);
+    Genome g = grown(cfg, tr, rng, 3, 2);
+    auto net = g.buildNetwork(cfg);
+    const size_t N = net->getNeuronCount();
+    std::vector<long> esp(N);
+    for (size_t k = 0; k < N; k++) esp[k] = static_cast<long>(10 * k);
+    g.asignarTasas(esp, 100);
+    // la neurona de índice k de la red tiene tasa 0,1·k: comprobar por rol contra los ids de la red
+    std::vector<int> ins = net->getInputNeuronIds(), outs = net->getOutputNeuronIds(), hid = net->getHiddenNeuronIds();
+    size_t qi = 0, qo = 0, qh = 0;
+    for (const auto& n : g.nodes()) {
+        const int k = n.role == NodeRole::Input ? ins[qi++] : n.role == NodeRole::Output ? outs[qo++] : hid[qh++];
+        REQUIRE_THAT(n.tasa, WithinAbs(0.1 * k, 1e-12));
+    }
+}
+
+TEST_CASE("F1–F4: actúan solo sobre neuronas con la actividad indicada", "[actividad]") {
+    NeatConfig cfg; InnovationTracker tr; Rng rng(5);
+    Genome g = grown(cfg, tr, rng, 3, 3);
+    // sin actividad medida: no se aplican y el genoma no cambia
+    for (Operator op : {Operator::WakeOutputs, Operator::WakeHidden, Operator::CalmSaturated, Operator::GainMuteInputs}) {
+        Genome h = g;
+        REQUIRE_FALSE(h.apply(op, cfg, tr, rng));
+        REQUIRE(weightsByInnov(h) == weightsByInnov(g));
+    }
+    // todas activas a tasa 0,05: ni mudas ni saturadas
+    {
+        Genome h = g;
+        h.asignarTasas(std::vector<long>(h.buildNetwork(cfg)->getNeuronCount(), 5), 100);
+        for (Operator op : {Operator::WakeOutputs, Operator::WakeHidden, Operator::CalmSaturated, Operator::GainMuteInputs})
+            REQUIRE_FALSE(h.apply(op, cfg, tr, rng));
+    }
+    // todas mudas: despertar salida → sube el sesgo de una salida y no baja ningún peso excitatorio hacia ella
+    {
+        Genome h = g;
+        h.asignarTasas(std::vector<long>(h.buildNetwork(cfg)->getNeuronCount(), 0), 100);
+        const Genome antes = h;
+        REQUIRE(h.apply(Operator::WakeOutputs, cfg, tr, rng));
+        int cambiadas = 0;
+        for (size_t k = 0; k < h.nodes().size(); k++) {
+            const auto& n = h.nodes()[k]; const auto& m = antes.nodes()[k];
+            if (n.bias != m.bias) { REQUIRE(n.role == NodeRole::Output); REQUIRE(n.bias > m.bias); cambiadas++; }
+        }
+        REQUIRE(cambiadas == 1);
+        for (size_t k = 0; k < h.conns().size(); k++)
+            if (antes.conns()[k].w > 0) REQUIRE(h.conns()[k].w >= antes.conns()[k].w);
+        REQUIRE(h.isValid());
+        Genome e = antes;
+        REQUIRE(e.apply(Operator::GainMuteInputs, cfg, tr, rng));
+        int gan = 0;
+        for (size_t k = 0; k < e.nodes().size(); k++)
+            if (e.nodes()[k].gain != antes.nodes()[k].gain) { REQUIRE(e.nodes()[k].role == NodeRole::Input); REQUIRE(e.nodes()[k].gain > 1.0); gan++; }
+        REQUIRE(gan == 1);
+    }
+    // todas saturadas: calmar → baja el sesgo de una oculta o salida
+    {
+        Genome h = g;
+        h.asignarTasas(std::vector<long>(h.buildNetwork(cfg)->getNeuronCount(), 50), 100);
+        const Genome antes = h;
+        REQUIRE(h.apply(Operator::CalmSaturated, cfg, tr, rng));
+        int cambiadas = 0;
+        for (size_t k = 0; k < h.nodes().size(); k++)
+            if (h.nodes()[k].bias != antes.nodes()[k].bias) { REQUIRE(h.nodes()[k].role != NodeRole::Input); REQUIRE(h.nodes()[k].bias < antes.nodes()[k].bias); cambiadas++; }
+        REQUIRE(cambiadas == 1);
+    }
+}

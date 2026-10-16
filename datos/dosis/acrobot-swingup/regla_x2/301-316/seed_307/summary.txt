@@ -1,0 +1,9 @@
+env=acrobot-swingup
+seed=307
+selector=ppo
+final_test=-11.5189
+best_train=-11.4947
+best_hidden=20
+best_conns=75
+resample_train=1
+best_validation_test=-11.2704

@@ -1,0 +1,9 @@
+env=bottleneck
+seed=4
+selector=ppo
+final_test=18.1704
+best_train=27.9207
+best_hidden=40
+best_conns=164
+resample_train=1
+best_validation_test=30.2107

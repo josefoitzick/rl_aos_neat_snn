@@ -137,6 +137,7 @@ def objetivo_factory(a, ref):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--env', required=True)
+    ap.add_argument('--ref', default=None, help='variante en score_v2_s1-10.json (por defecto, el entorno; p. ej. pendulum-meta_reactivo)')
     ap.add_argument('--trials', type=int, default=100, help='total de trials del estudio (completos + podados)')
     ap.add_argument('--seeds', default='101,102,103')
     ap.add_argument('--threads', type=int, default=4)
@@ -147,7 +148,7 @@ def main():
     ap.add_argument('--intervalo', type=float, default=60, help='segundos entre lecturas de generations.csv')
     a = ap.parse_args()
     a.seeds = [int(s) for s in a.seeds.split(',')]
-    ref = {r['variante']: r for r in json.load(open(f'{R}/ref_rl/score_v2_s1-10.json'))}[a.env]
+    ref = {r['variante']: r for r in json.load(open(f'{R}/ref_rl/score_v2_s1-10.json'))}[a.ref or a.env]
     os.makedirs(f'{R}/{a.dir}/{a.env}', exist_ok=True)
     storage = JournalStorage(JournalFileBackend(f'{R}/{a.dir}/{a.env}/estudio.log'))
     study = optuna.create_study(

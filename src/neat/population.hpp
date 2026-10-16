@@ -33,6 +33,10 @@ public:
     GenerationReport endGeneration();
     void reproduce(const std::vector<double>& op_probs);
 
+    // Intensidades de variación de las próximas reproducciones (plan B); por omisión, las de la configuración
+    void setVariacion(const Variacion& v) { aplicarVariacion(cfg_, v); }
+    Variacion variacion() const { return variacionDe(cfg_); }
+
     int generation() const { return generation_; }
     const Genome& bestEver() const { return best_ever_; }
     const std::vector<Species>& species() const { return species_; }

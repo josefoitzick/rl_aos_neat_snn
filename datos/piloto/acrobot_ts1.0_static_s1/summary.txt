@@ -1,0 +1,14 @@
+env=acrobot
+torque_scale=1
+selector=static
+seed=1
+pop=150
+generations=40
+episodes=5
+evaluations=6000
+best_train=-27
+final_test=-32.94
+final_test_episodes=100
+best_hidden=2
+best_conns=22
+seconds=4.09453

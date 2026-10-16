@@ -1,0 +1,24 @@
+== orig rep 1
+red 12+2+30 neuronas, 400 sinapsis, 30 ms × 40000 ventanas: 3.059 s, 57.94 ns por neurona-paso, espigas 845014, huella af2a67ce291b3ac2
+red 24+4+40 neuronas, 240 sinapsis, 50 ms × 15000 ventanas: 2.851 s, 55.91 ns por neurona-paso, espigas 234275, huella 060119e1baaf9717
+red 164+8+10 neuronas, 1300 sinapsis, 80 ms × 4000 ventanas: 2.326 s, 39.94 ns por neurona-paso, espigas 1517972, huella 294dfac31bc0d5e3
+== patched rep 1
+red 12+2+30 neuronas, 400 sinapsis, 30 ms × 40000 ventanas: 1.663 s, 31.51 ns por neurona-paso, espigas 845014, huella af2a67ce291b3ac2
+red 24+4+40 neuronas, 240 sinapsis, 50 ms × 15000 ventanas: 0.937 s, 18.38 ns por neurona-paso, espigas 234275, huella 060119e1baaf9717
+red 164+8+10 neuronas, 1300 sinapsis, 80 ms × 4000 ventanas: 1.565 s, 26.88 ns por neurona-paso, espigas 1517972, huella 294dfac31bc0d5e3
+== orig rep 2
+red 12+2+30 neuronas, 400 sinapsis, 30 ms × 40000 ventanas: 3.580 s, 67.80 ns por neurona-paso, espigas 845014, huella af2a67ce291b3ac2
+red 24+4+40 neuronas, 240 sinapsis, 50 ms × 15000 ventanas: 2.450 s, 48.03 ns por neurona-paso, espigas 234275, huella 060119e1baaf9717
+red 164+8+10 neuronas, 1300 sinapsis, 80 ms × 4000 ventanas: 3.219 s, 55.27 ns por neurona-paso, espigas 1517972, huella 294dfac31bc0d5e3
+== patched rep 2
+red 12+2+30 neuronas, 400 sinapsis, 30 ms × 40000 ventanas: 2.357 s, 44.65 ns por neurona-paso, espigas 845014, huella af2a67ce291b3ac2
+red 24+4+40 neuronas, 240 sinapsis, 50 ms × 15000 ventanas: 1.269 s, 24.87 ns por neurona-paso, espigas 234275, huella 060119e1baaf9717
+red 164+8+10 neuronas, 1300 sinapsis, 80 ms × 4000 ventanas: 1.214 s, 20.85 ns por neurona-paso, espigas 1517972, huella 294dfac31bc0d5e3
+== orig rep 3
+red 12+2+30 neuronas, 400 sinapsis, 30 ms × 40000 ventanas: 4.198 s, 79.51 ns por neurona-paso, espigas 845014, huella af2a67ce291b3ac2
+red 24+4+40 neuronas, 240 sinapsis, 50 ms × 15000 ventanas: 3.109 s, 60.96 ns por neurona-paso, espigas 234275, huella 060119e1baaf9717
+red 164+8+10 neuronas, 1300 sinapsis, 80 ms × 4000 ventanas: 3.480 s, 59.75 ns por neurona-paso, espigas 1517972, huella 294dfac31bc0d5e3
+== patched rep 3
+red 12+2+30 neuronas, 400 sinapsis, 30 ms × 40000 ventanas: 2.339 s, 44.31 ns por neurona-paso, espigas 845014, huella af2a67ce291b3ac2
+red 24+4+40 neuronas, 240 sinapsis, 50 ms × 15000 ventanas: 0.858 s, 16.81 ns por neurona-paso, espigas 234275, huella 060119e1baaf9717
+red 164+8+10 neuronas, 1300 sinapsis, 80 ms × 4000 ventanas: 1.229 s, 21.11 ns por neurona-paso, espigas 1517972, huella 294dfac31bc0d5e3

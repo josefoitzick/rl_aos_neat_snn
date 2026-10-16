@@ -1,0 +1,4 @@
+gen,evaluations,best_train,mean_train,std_train,champion_test,species,compat_threshold,champion_hidden,champion_conns,mean_hidden,mean_conns,seconds,p_mutate_weights,n_mutate_weights,improved_mutate_weights,p_add_connection,n_add_connection,improved_add_connection,p_add_node,n_add_node,improved_add_node
+0,230,-16.3454,-18.4609,0.533793,-17.7213,10,3,0,24,0,24,3.29504,0.464213,0,0,0.35117,0,0,0.184617,0,0
+1,460,-16.0671,-18.5398,0.723337,-16.7226,6,3.1,0,24,0.165217,24.4913,3.30936,0.464213,113,0.247788,0.35117,75,0.16,0.184617,38,0.210526
+2,690,-15.6145,-17.8071,0.578738,-16.0679,6,3.2,1,25,0.482609,25.0174,3.40282,0.464213,106,0.622642,0.35117,80,0.5625,0.184617,40,0.475

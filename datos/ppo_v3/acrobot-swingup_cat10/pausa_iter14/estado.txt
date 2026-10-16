@@ -1,0 +1,7 @@
+iteracion=14
+corridas=560
+semilla_en_curso=1561
+K=10
+OBS=10
+accion=p
+binario=dd1cd0d0ca6d18de

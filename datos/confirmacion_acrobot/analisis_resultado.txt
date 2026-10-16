@@ -1,0 +1,1 @@
+100 semillas pareadas: c0 0.5147, regla 0.5191; regla−c0 Δ +0.0043 (ee 0.0044), gana 61/100, Wilcoxon p 0.1061

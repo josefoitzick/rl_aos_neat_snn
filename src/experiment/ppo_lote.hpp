@@ -17,6 +17,7 @@
 // Requiere incluir antes las operaciones de RLtools (rl_tools/operations/cpu_mux.h y las de nn/). Si la unidad
 // envuelve RLtools en un espacio de nombres propio (RL_TOOLS_NAMESPACE_WRAPPER, para no chocar con otra unidad
 // que también lo incluye, como libenvs), todo este archivo queda dentro del mismo envoltorio.
+#include <functional>
 #include <type_traits>
 #include <vector>
 #include "aos/action_map.hpp"
@@ -79,6 +80,11 @@ struct Lote {
     typename SPEC::POOL* pool = nullptr;
     std::vector<double> logp0;   // log P₀ con piso (aos::logP0)
     double c = 3.0;              // cota de la desviación de cada logit
+    // Plan B: si está, la acción se decodifica con este mapa (P y/o intensidades de variación) en vez de logp0 y c
+    const aos::MapaAccion* mapa = nullptr;
+    // PPO residual: si está, suma a la acción de la ranura la de una política base (la regla escrita a mano) antes de
+    // decodificar; con acción 0 del agente, la decisión es exactamente la de la base
+    std::function<void(int, double*)> residual;
 };
 
 // Configuración del núcleo de PPO con nuestro lote en lugar de batch::Independent
@@ -118,8 +124,9 @@ void free(DEVICE&, ppo_lote::Lote<SPEC>&) {}
 template <typename DEVICE, typename SPEC>
 void init(DEVICE&, ppo_lote::Lote<SPEC>& lote) {
     if (!lote.pool) throw std::logic_error("ppo_lote: lote sin pool");
-    if (static_cast<typename SPEC::TI>(lote.logp0.size()) != ppo_lote::Lote<SPEC>::ACTION_DIM)
-        throw std::logic_error("ppo_lote: log P0 de tamaño distinto de ACTION_DIM");
+    const auto dim = lote.mapa ? lote.mapa->dim() : static_cast<int>(lote.logp0.size());
+    if (static_cast<typename SPEC::TI>(dim) != ppo_lote::Lote<SPEC>::ACTION_DIM)
+        throw std::logic_error("ppo_lote: la acción del mapa no tiene ACTION_DIM dimensiones");
 }
 
 template <typename DEVICE, typename SPEC, typename PARAMETER_SPEC, typename RESET_SPEC, typename RNG>
@@ -143,7 +150,8 @@ void sample_initial_state(DEVICE& device, ppo_lote::Lote<SPEC>& lote, Tensor<PAR
     }
 }
 
-// Una decisión para todas las ranuras: a → P (aos::actionToP) y el pool avanza k generaciones en cada una
+// Una decisión para todas las ranuras: a → P (aos::actionToP) o, con mapa, a → P e intensidades; el pool avanza k
+// generaciones en cada una
 template <typename DEVICE, typename SPEC, typename PARAMETER_SPEC, typename STATE_SPEC, typename ACTION_SPEC,
           typename NEXT_STATE_SPEC, typename RNG>
 void step(DEVICE& device, ppo_lote::Lote<SPEC>& lote, Tensor<PARAMETER_SPEC>&, Tensor<STATE_SPEC>& states,
@@ -153,12 +161,17 @@ void step(DEVICE& device, ppo_lote::Lote<SPEC>& lote, Tensor<PARAMETER_SPEC>&, T
     constexpr TI N = SPEC::INSTANCES;
     constexpr TI K = SPEC::ENVIRONMENT::ACTION_DIM;
     std::vector<std::vector<double>> P(N);
+    std::vector<neat::Variacion> V(lote.mapa ? N : 0);
     for (TI i = 0; i < N; i++) {
         double a[K];
         for (TI j = 0; j < K; j++) a[j] = static_cast<double>(get(device, actions, i, j));
-        P[i] = aos::actionToP(a, lote.logp0, lote.c);
+        if (lote.residual) lote.residual(static_cast<int>(i), a);
+        if (lote.mapa)
+            lote.mapa->decodificar(a, P[i], V[i]);
+        else
+            P[i] = aos::actionToP(a, lote.logp0, lote.c);
     }
-    lote.pool->advance(P);
+    lote.pool->advance(P, lote.mapa && lote.mapa->mueveIntensidades() ? &V : nullptr);
     for (TI i = 0; i < N; i++) {
         const auto& s = get_ref(device, states, i);
         auto& ns = get_ref(device, next_states, i);

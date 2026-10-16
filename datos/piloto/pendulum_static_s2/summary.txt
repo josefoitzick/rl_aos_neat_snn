@@ -1,0 +1,14 @@
+env=pendulum
+torque_scale=1
+selector=static
+seed=2
+pop=150
+generations=150
+episodes=5
+evaluations=22500
+best_train=-256.113
+final_test=-368.906
+final_test_episodes=100
+best_hidden=4
+best_conns=18
+seconds=42.5117

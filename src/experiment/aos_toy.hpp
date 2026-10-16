@@ -34,6 +34,7 @@
 #include <random>
 #include <stdexcept>
 #include <vector>
+#include "neat/variacion.hpp"
 
 namespace aos::toy {
 
@@ -268,6 +269,11 @@ public:
         }
     }
 
+    // Misma interfaz que NeatPool; el sintético no modela intensidades de variación (plan B)
+    void advance(const std::vector<std::vector<double>>& P, const std::vector<neat::Variacion>* V) {
+        if (V) throw std::logic_error("toy::Pool: el AOS sintético no modela intensidades de variación");
+        advance(P);
+    }
     void advance(const std::vector<std::vector<double>>& P) {
         if (static_cast<int>(P.size()) != slots()) throw std::invalid_argument("toy::Pool::advance: falta P por ranura");
         for (int s = 0; s < slots(); s++) {

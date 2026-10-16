@@ -95,6 +95,7 @@ public:
     std::vector<double> getVoltages() const;
     std::vector<int> getOutputNeuronIds() const { return output_neurons; }
     std::vector<int> getInputNeuronIds() const { return input_neurons; }
+    const std::vector<int>& getHiddenNeuronIds() const { return hidden_neurons; }
     
     // Recurrencia
     void setRecurrent(bool recurrent) { allow_recurrent = recurrent; }

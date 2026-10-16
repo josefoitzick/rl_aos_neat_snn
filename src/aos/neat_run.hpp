@@ -12,8 +12,9 @@
 //
 // NeatPool: varias corridas en ranuras, con la interfaz que espera el lote de RLtools
 // (src/experiment/ppo_lote.hpp): start, advance, obs, phi, t, T y reward. Avanza todas las ranuras juntas:
-// reproduce y cierra generaciones en paralelo entre corridas, y evalúa los genomas de todas las corridas en una
-// sola región paralela (eval::evaluatePopulations).
+// reproduce y cierra generaciones en paralelo entre corridas, evalúa los genomas de todas las corridas en una
+// sola región paralela (eval::evaluatePopulations) y mide en lote, también con los episodios repartidos entre hilos,
+// la validación de los campeones, Φ y el test final (eval::evaluateGenomes).
 #include <cstdint>
 #include <fstream>
 #include <memory>
@@ -38,6 +39,8 @@ struct NeatRunConfig {
     int T = 50;                   // decisiones por corrida
     double ref_trivial = 0.0;     // σ(J) = (J − J_trivial) / (J_RL − J_trivial)
     double ref_rl = 1.0;
+    bool estado_compacto = false; // estado de 9 rasgos (plan B) en vez de 14 + 2K
+    bool estado_snn = false;      // estado de 10 rasgos con la actividad de la SNN (mide la actividad del campeón)
 };
 
 class NeatRun {
@@ -47,10 +50,21 @@ public:
     // Fases de una generación. Las orquesta quien corre: el uso secuencial de abajo o NeatPool (en paralelo).
     std::vector<neat::Genome>& genomes() { return pop_.genomes(); }
     const std::vector<uint64_t>& trainingSeeds() const { return gen_seeds_; }
-    void closeGeneration();                        // tras asignar el fitness de la generación en curso
-    void reproduce(const std::vector<double>& P);  // produce la generación siguiente con P
+    void closeGeneration();                        // tras asignar el fitness: valida al campeón y cierra la generación
+    void closeGeneration(double champ_test);       // ídem, con la validación ya medida (validationJob)
+    // Produce la generación siguiente con P y, si se da, con las intensidades v (plan B); sin v, las vigentes
+    void reproduce(const std::vector<double>& P, const neat::Variacion* v = nullptr);
     bool needsGeneration() const;                  // falta llegar a la frontera de la decisión en curso
     void closeWindow();                            // observación y, si cambió el campeón, Φ
+    void closeWindow(double phi_return);           // ídem, con el retorno de phiJob ya medido (NaN si !needsPhi())
+    bool needsPhi() const { return champion_changed_ && cfg_.reward_episodes > 0; }
+
+    // Lo que hay que medir para cerrar, para que NeatPool lo mida en lote (eval::evaluateGenomes). Cada trabajo da
+    // exactamente el valor que calcularía la corrida por sí misma.
+    eval::GenomeJob validationJob();         // campeón de la generación en curso por fitness, validación (stream 1);
+                                             // con estado SNN, el trabajo también mide su actividad
+    eval::GenomeJob phiJob() const;          // campeón vigente, conjunto de recompensa (stream 3)
+    eval::GenomeJob finalJob() const;        // campeón vigente, test final (stream 2)
 
     // Uso secuencial (tests y verificación), con eval::evaluatePopulation
     void startSequential();                                // generación 0 y ventana 0
@@ -70,6 +84,7 @@ public:
     const neat::Genome& champion() const { return best_val_genome_; }
     const neat::GenerationReport& lastReport() const { return last_rep_; }
     const NeatRunConfig& config() const { return cfg_; }
+    neat::Variacion variacion() const { return pop_.variacion(); }   // intensidades vigentes
     const std::vector<int>& boundaries() const { return bounds_; }
 
     // generations.csv con el formato de neat_control. `P_inicial` es la P que se anota en la generación 0
@@ -79,7 +94,9 @@ public:
 private:
     NeatRunConfig cfg_;
     uint64_t seed_;
-    std::unique_ptr<envs::ControlEnv> probe_;   // validación, Φ y test final (escenas de test, si las hay)
+    std::unique_ptr<envs::ControlEnv> probe_;   // dimensiones de entrada y salida (escenas de test, si las hay)
+    eval::ActividadSNN act_val_;                // actividad del campeón en su validación (estado SNN)
+    envs::EnvOptions test_opt_;                 // opciones de validación, Φ y test final (escenas de test)
     neat::Population pop_;
     FeatureExtractor features_;
     std::vector<int> bounds_;                   // fronteras de decisión g_0 … g_T
@@ -99,6 +116,8 @@ private:
     double gen_t0_ = 0.0;
 
     void writeCsvRow(double champ_test);
+    size_t championIndex() const;   // primer genoma de mayor fitness de la generación en curso
+    eval::GenomeJob job(const neat::Genome& g, const std::vector<uint64_t>& seeds) const;
 };
 
 class NeatPool {
@@ -109,16 +128,22 @@ public:
         double final_score;       // σ(final_test)
         double ret;               // suma de recompensas
         double best_validation;   // σ de la mejor validación
+        std::string env;          // entorno de la corrida (pools con entornos mezclados)
     };
 
     NeatPool(const NeatRunConfig& cfg, int slots, uint64_t seed_base, double w_area, double reward_scale,
+             bool final_test = true);
+    // Una configuración por ranura (p. ej., entornos mezclados para la transferencia). Todas deben tener el mismo T y
+    // el mismo tamaño de catálogo, para que la observación y la acción tengan las mismas dimensiones.
+    NeatPool(const std::vector<NeatRunConfig>& cfg_por_ranura, uint64_t seed_base, double w_area, double reward_scale,
              bool final_test = true);
 
     int T() const { return cfg_.T; }
     int slots() const { return static_cast<int>(runs_.size()); }
     int obsDim() const;
     void start(const std::vector<int>& slots);
-    void advance(const std::vector<std::vector<double>>& P);
+    // Una decisión por ranura: P y, si se dan (plan B), las intensidades de variación
+    void advance(const std::vector<std::vector<double>>& P, const std::vector<neat::Variacion>* V = nullptr);
     const std::vector<float>& obs(int s) const { return runs_[s]->obs(); }
     double phi(int s) const { return runs_[s]->phi(); }
     int t(int s) const { return runs_[s]->t(); }
@@ -129,7 +154,8 @@ public:
     NeatRun& run(int s) { return *runs_[s]; }
     // Registro por decisión (CSV): semilla, t, generación, evaluaciones, Φ antes y después, recompensa, P y la
     // observación con que se decidió
-    void enableDecisionLog(const std::string& path, bool append = false);
+    // Con intensidades, agrega las columnas potencia, reasignar y solo_mutacion (plan B)
+    void enableDecisionLog(const std::string& path, bool append = false, bool con_intensidades = false);
     // generations.csv de cada corrida en dir/seed_XX/ (verificación): se activa al iniciar cada corrida
     void enableCsv(const std::string& dir, bool credito_rango, const std::vector<double>& P_inicial) {
         csv_dir_ = dir;
@@ -140,27 +166,32 @@ public:
     // Registro: corridas terminadas y P media desde el último vaciado; contabilidad (V2)
     std::vector<Finished> takeFinished();
     std::vector<double> takeMeanP();
+    std::vector<double> takeMeanVariacion();   // potencia, reasignar y solo_mutacion medias; vacío si no hubo
     long started() const { return n_started_; }
     long finishedCount() const { return n_finished_; }
     long decisions() const { return n_decisions_; }
     uint64_t nextSeed() const { return next_seed_; }
 
 private:
-    NeatRunConfig cfg_;
+    NeatRunConfig cfg_;                       // la de la ranura 0 (T y catálogo comunes a todas)
+    std::vector<NeatRunConfig> slot_cfg_;     // una por ranura
     std::vector<std::unique_ptr<NeatRun>> runs_;
     std::vector<double> ret_;
     uint64_t next_seed_;
     double w_area_, scale_;
     bool final_test_;
     std::vector<Finished> finished_;
-    std::vector<double> p_sum_;
-    long p_count_ = 0, n_started_ = 0, n_finished_ = 0, n_decisions_ = 0;
+    std::vector<double> p_sum_, v_sum_ = std::vector<double>(3, 0.0);
+    long p_count_ = 0, v_count_ = 0, n_started_ = 0, n_finished_ = 0, n_decisions_ = 0;
+    bool dec_intensidades_ = false;
     std::string csv_dir_;
     bool csv_rank_ = false;
     std::vector<double> csv_P0_;
     std::ofstream dec_log_;
 
     void evaluateCurrent(const std::vector<int>& slots);
+    void closeGenerations(const std::vector<int>& slots);   // validación en lote y cierre de la generación
+    void closeWindows(const std::vector<int>& slots);       // Φ en lote (donde haga falta) y cierre de la ventana
 };
 
 }  // namespace aos

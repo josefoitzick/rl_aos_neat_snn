@@ -4,6 +4,7 @@
 #include <vector>
 #include "core/neuron.hpp"
 #include "operators.hpp"
+#include "variacion.hpp"
 
 namespace neat {
 
@@ -66,10 +67,36 @@ struct NeatConfig {
     double gain_min               = 0.25;
     double gain_max               = 4.0;
     int    add_node_multi_k       = 3;      // C9: nodos agregados por aplicación
+    // F1–F4, dirigidos por actividad: el evaluador mide la tasa de disparo de cada neurona de cada genoma (solo observa)
+    bool   medir_actividad        = false;  // lo activa el catálogo si contiene alguno de F1–F4 (ver activarActividad)
+    // Umbrales en espigas por paso de simulación, calibrados con los cuantiles de la tasa por rol en pendulum-meta y
+    // acrobot-swingup (máximo observado ~0,16; ver el diagnóstico [.diag_tasas] de tests/neat_run_tests.cpp)
+    double umbral_muda            = 0.005;  // F1, F2, F4: muda o casi muda (≤ cuantil 5 % de salidas y entradas)
+    double umbral_saturacion      = 0.08;   // F3: saturada (~cuantil 95 % de ocultas y salidas)
+    double actividad_bias_sigma   = 2.0;    // F1–F3: |N(0, σ)| sobre la corriente de reposo
+    double actividad_peso_sigma   = 0.5;    // F1–F3: entradas excitatorias × exp(±|N(0, σ)|)
+    double actividad_gain_sigma   = 0.6;    // F4: ganancia × exp(|N(0, σ)|)
     // B3 y C4: familias corticales de Izhikevich (2004, Fig. 2)
     std::vector<NeuronType> families = {NeuronType::REGULAR_SPIKING, NeuronType::FAST_SPIKING,
                                         NeuronType::INTRINSICALLY_BURSTING, NeuronType::CHATTERING};
 };
+
+// Activa la medición de actividad si el catálogo tiene operadores dirigidos por actividad
+inline void activarActividad(NeatConfig& c) {
+    for (Operator op : c.catalog)
+        if (usaActividad(op)) c.medir_actividad = true;
+}
+
+// Intensidades de variación de la configuración (struct Variacion en variacion.hpp)
+inline Variacion variacionDe(const NeatConfig& c) {
+    return {c.weight_perturb_power, c.weight_perturb_prob, c.mutation_only_fraction};
+}
+
+inline void aplicarVariacion(NeatConfig& c, const Variacion& v) {
+    c.weight_perturb_power = v.weight_perturb_power;
+    c.weight_perturb_prob = v.weight_perturb_prob;
+    c.mutation_only_fraction = v.mutation_only_fraction;
+}
 
 // B2: rangos de (a, b, c, d) para la perturbación continua; cubren RS, FS, IB, CH, LTS, RZ y TONIC
 // (Izhikevich 2004) sin llegar a regímenes que divergen con Euler (p. ej. BISTABILITY, a = 1, b = 1,5).

@@ -1,0 +1,15 @@
+pendulum-meta, PPO v2: 800 corridas (×10⁻³ de score final por +1 en log P sostenido en la fase; * |t| > 3, · |t| > 2)
+  operador           inicio t0-2        medio t3-5        final t6-9
+  mut_pesos        +16.9 ±  8.7      +11.6 ± 10.1      -12.4 ± 10.3 
+  conexion          -3.2 ±  9.3       -6.0 ±  8.6      -15.3 ± 11.2 
+  nodo              -8.0 ±  8.8      -13.4 ±  8.9       +7.6 ± 11.0 
+  ganancia         -13.7 ±  9.1      -19.9 ±  8.4·     -25.9 ± 10.8·
+  pesos_finos       -1.3 ±  8.5       -0.0 ±  8.6       -5.2 ± 10.4 
+  dinamica          +9.0 ±  9.3      +10.7 ±  9.6      +13.8 ± 11.0 
+  sesgo             +7.3 ±  8.9      +29.8 ±  8.6*     +42.0 ± 10.3*
+  podar             +6.4 ±  8.8       -3.2 ±  9.4       -3.7 ± 10.8 
+  familia           +9.8 ±  9.2       +7.9 ±  8.3       -6.1 ±  9.6 
+  borrar_con       -23.1 ±  9.3·     -17.4 ±  8.3·      +5.3 ± 10.3 
+  dirección ficha 25 (mutar pesos +1, nodo −1) en inicio t0-2: +24.9 ± 12.8 ×10⁻³ (t +1.9)
+  dirección ficha 25 (mutar pesos +1, nodo −1) en medio t3-5: +25.0 ± 14.0 ×10⁻³ (t +1.8)
+  dirección ficha 25 (mutar pesos +1, nodo −1) en final t6-9: -20.0 ± 15.6 ×10⁻³ (t -1.3)

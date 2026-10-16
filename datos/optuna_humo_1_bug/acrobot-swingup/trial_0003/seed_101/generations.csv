@@ -1,0 +1,2 @@
+gen,evaluations,best_train,mean_train,std_train,champion_test,species,compat_threshold,champion_hidden,champion_conns,mean_hidden,mean_conns,seconds,p_mutate_weights,n_mutate_weights,improved_mutate_weights,p_add_connection,n_add_connection,improved_add_connection,p_add_node,n_add_node,improved_add_node
+0,230,-15.9969,-17.9199,0.707825,-14.2428,25,3,0,24,0,24,4.83826,0.480351,0,0,0.00622761,0,0,0.513422,0,0

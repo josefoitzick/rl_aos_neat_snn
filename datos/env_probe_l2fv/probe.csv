@@ -1,0 +1,2 @@
+env,agents,obs_dim,act_dim,snn_inputs,snn_outputs,max_steps,random_mean,random_sd,random_len,zero_mean,zero_sd,zero_len,env_us_per_step,snn_ms_per_episode,snn_len
+l2f-visual,1,768,4,768,8,500,2.78273,9.96582,45.85,4.51758,10.0513,47.45,119.552,40.4233,45.85

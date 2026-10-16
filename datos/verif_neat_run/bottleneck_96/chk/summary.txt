@@ -1,0 +1,2 @@
+final_test=-0.81
+best_validation_test=-0.6

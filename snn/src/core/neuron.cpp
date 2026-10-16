@@ -103,13 +103,19 @@ void IzhikevichNeuron::step(double dt) {
 
 
     // Decaimiento exponencial de conductancias (tau * dg/dt = -g)
-    g_exc *= exp( -dt / tau_exc);
-    g_inh *= exp( -dt / tau_inh);
+    if (dt != decay_dt) {
+        decay_dt  = dt;
+        decay_exc = exp( -dt / tau_exc);
+        decay_inh = exp( -dt / tau_inh);
+    }
+    g_exc *= decay_exc;
+    g_inh *= decay_inh;
 
     // Integración de v y u (dos sub-pasos de dt/2)
     for (int i = 0; i < 2; i++) {
         // Corriente total: excitatoria - inhibitoria + directa + offset + ruido
-        double I_total = g_exc - g_inh + i_offset + noise * uniform(rng);
+        double I_total = g_exc - g_inh + i_offset;
+        if (noise != 0.0) I_total += noise * uniform(rng);
 
         double dv = (0.04 * v * v + 5.0 * v + 140.0 - u + I_total) * (dt / 2.0);
         v += dv;

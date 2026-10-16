@@ -1,0 +1,46 @@
+
+===== c0: 60 semillas
+  generación de la última mejora de la validación: mediana 446, cuartiles 221–547; antes de la 115: 7%, antes de la 230: 27%
+  mejoras de la validación por tramo (total en todas las semillas): {'0-57': np.int64(734), '58-115': np.int64(119), '116-230': np.int64(147), '231-345': np.int64(53), '346-460': np.int64(70), '461-576': np.int64(62)}
+         valid(score)  mejor_train  media_train  DE_train  especies     δt  ocultas_camp  conex_camp  conex_media
+tramo                                                                                                            
+0-57            0.440        0.491        0.395     0.073     2.882  0.957         3.393      27.190       27.023
+58-115          0.499        0.541        0.478     0.062     4.343  0.312         7.641      34.488       34.153
+116-230         0.505        0.550        0.491     0.058     4.394  0.336        11.062      41.374       41.142
+231-345         0.505        0.555        0.490     0.068     5.214  0.372        13.711      46.640       46.417
+346-460         0.506        0.560        0.486     0.075     4.928  0.384        15.825      50.226       50.114
+461-576         0.514        0.567        0.489     0.078     4.943  0.381        17.139      53.354       53.259
+  fracción de hijos que superan al padre, por operador:
+         mutate_wei  add_connec  add_node  input_gain  weights_fi  neuron_dyn  neuron_bia  delete_sim  neuron_fam  delete_con
+tramo                                                                                                                        
+0-57          0.223       0.307     0.336       0.335       0.335       0.339       0.340       0.333       0.304       0.283
+58-115        0.296       0.378     0.404       0.398       0.402       0.402       0.403       0.396       0.380       0.349
+116-230       0.322       0.387     0.405       0.405       0.407       0.408       0.406       0.400       0.389       0.363
+231-345       0.316       0.385     0.399       0.397       0.403       0.402       0.398       0.398       0.390       0.355
+346-460       0.297       0.369     0.380       0.383       0.386       0.383       0.387       0.383       0.374       0.335
+461-576       0.289       0.360     0.378       0.377       0.379       0.381       0.382       0.377       0.365       0.331
+
+===== regla: 60 semillas
+  generación de la última mejora de la validación: mediana 474, cuartiles 346–534; antes de la 115: 2%, antes de la 230: 8%
+  mejoras de la validación por tramo (total en todas las semillas): {'0-57': np.int64(835), '58-115': np.int64(177), '116-230': np.int64(181), '231-345': np.int64(116), '346-460': np.int64(90), '461-576': np.int64(76)}
+         valid(score)  mejor_train  media_train  DE_train  especies     δt  ocultas_camp  conex_camp  conex_media
+tramo                                                                                                            
+0-57            0.426        0.478        0.392     0.061     1.505  0.952         4.032      29.482       29.497
+58-115          0.502        0.540        0.487     0.047     1.608  0.300        10.553      42.786       42.943
+116-230         0.511        0.551        0.506     0.041     1.150  0.300        17.506      58.613       58.844
+231-345         0.516        0.559        0.506     0.050     1.411  0.300        23.265      74.321       74.351
+346-460         0.521        0.567        0.505     0.059     1.328  0.300        25.765      83.544       83.551
+461-576         0.522        0.576        0.503     0.068     1.220  0.300        28.501      92.243       92.271
+  fracción de hijos que superan al padre, por operador:
+         mutate_wei  add_connec  add_node  input_gain  weights_fi  neuron_dyn  neuron_bia  delete_sim  neuron_fam  delete_con
+tramo                                                                                                                        
+0-57          0.220       0.310     0.333       0.325       0.330       0.332       0.332       0.327       0.303       0.284
+58-115        0.286       0.376     0.393       0.386       0.390       0.394       0.389       0.387       0.379       0.354
+116-230       0.318       0.391     0.402       0.400       0.402       0.402       0.402       0.396       0.393       0.375
+231-345       0.319       0.392     0.401       0.397       0.398       0.399       0.399       0.397       0.390       0.379
+346-460       0.293       0.369     0.378       0.373       0.380       0.379       0.376       0.378       0.374       0.357
+461-576       0.270       0.355     0.364       0.363       0.364       0.363       0.362       0.362       0.355       0.342
+
+===== exploratorio: diversidad y mejora tardía
+acrobot-swingup (60 semillas, c0): tras la gen 115: especies 4.87 (objetivo 123 máx. observado), δt en el piso 90% de las generaciones; mejora tardía de la validación +0.0417; Spearman(especies, mejora tardía) = -0.15 (p 0.265)
+pendulum-meta (300 semillas, c0): tras la gen 107: especies 4.28 (objetivo 22 máx. observado), δt en el piso 0% de las generaciones; mejora tardía de la validación +0.1164; Spearman(especies, mejora tardía) = +0.13 (p 0.021)

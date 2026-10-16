@@ -17,8 +17,9 @@ cd "$(dirname "$0")/.."
 ENV=$1
 W=$2
 TRIALS=${3:-100}
+EXTRA=${4:-}   # opciones extra para optuna_neat.py (p. ej. "--seeds 101,102 --ref pendulum-meta_reactivo")
 PY=~/miniconda3/envs/tdi/bin/python
-BIN=~/tesis/runs/optuna_neat_bin/neat_control
+BIN=${BIN_NEAT:-$HOME/tesis/runs/optuna_neat_bin/neat_control}   # BIN_NEAT: otro binario congelado (p. ej., fase_ppo_bin, idéntico y más rápido)
 LOG=~/tesis/runs/optuna_neat/logs
 mkdir -p "$LOG"
 
@@ -31,7 +32,7 @@ fi
 echo "inicio $ENV: $(date)  trabajadores: $W × 12 hilos  trials: $TRIALS  binario sha256: $(sha256sum "$BIN" | cut -c1-16)" \
      | tee -a "$LOG/lanzador.log"
 for w in $(seq 1 "$W"); do
-    "$PY" scripts/optuna_neat.py --env "$ENV" --trials "$TRIALS" --binary "$BIN" > "$LOG/${ENV}_w$w.log" 2>&1 &
+    "$PY" scripts/optuna_neat.py --env "$ENV" --trials "$TRIALS" --binary "$BIN" $EXTRA > "$LOG/${ENV}_w$w.log" 2>&1 &
     sleep 5   # el primer trabajador crea el estudio y encola la configuración por defecto
 done
 wait

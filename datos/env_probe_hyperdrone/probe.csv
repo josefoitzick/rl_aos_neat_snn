@@ -1,0 +1,3 @@
+env,agents,obs_dim,act_dim,snn_inputs,snn_outputs,max_steps,random_mean,random_sd,random_len,zero_mean,zero_sd,zero_len,env_us_per_step,snn_ms_per_episode,snn_len
+hyperdrone-target-frame,1,1536,4,1536,8,500,-205.504,40.4346,51.2,-169.339,40.368,51.55,364.119,160.557,51.2
+hyperdrone-moving-gate,1,768,4,768,8,500,-188.989,55.7868,50.05,-151.005,53.6771,50.3,275.999,70.1305,50.05

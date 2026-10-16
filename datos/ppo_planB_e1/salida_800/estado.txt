@@ -1,0 +1,7 @@
+iteracion=100
+corridas=800
+semilla_en_curso=1801
+K=10
+OBS=9
+accion=ambas
+binario=1753cf2696c8a69e

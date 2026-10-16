@@ -177,6 +177,10 @@ bool Genome::apply(Operator op, const NeatConfig& cfg, InnovationTracker& innov,
         case Operator::DuplicateNode:    return mutateDuplicateNode(cfg, innov, rng);
         case Operator::DeleteConnection: return mutateDeleteConnection(cfg, rng);
         case Operator::DeleteSimpleNode: return mutateDeleteSimpleNode(cfg, innov, rng);
+        case Operator::WakeOutputs:      return mutateWakeNeuron(NodeRole::Output, cfg, rng);
+        case Operator::WakeHidden:       return mutateWakeNeuron(NodeRole::Hidden, cfg, rng);
+        case Operator::CalmSaturated:    return mutateCalmSaturated(cfg, rng);
+        case Operator::GainMuteInputs:   return mutateGainMuteInputs(cfg, rng);
     }
     return false;
 }
@@ -428,6 +432,62 @@ bool Genome::mutateDeleteSimpleNode(const NeatConfig& cfg, InnovationTracker& in
         }
     addConnSorted({innov.connection(c.src, c.dst), c.src, c.dst, c.w_out, true});
     return true;
+}
+
+// ─────────────────── dirigidos por la actividad de la SNN (F1–F4) ───────────────────
+// Usan la tasa de disparo de cada neurona en la evaluación del padre (NodeGene::tasa). Con tasa desconocida (< 0) la
+// neurona no es candidata; sin candidatas, el operador no se aplica.
+
+// Multiplica los pesos de las conexiones excitatorias activas que llegan a `id` por `factor`
+void Genome::escalarEntradasExcitatorias(int id, double factor, const NeatConfig& cfg) {
+    for (ConnGene& c : conns_)
+        if (c.enabled && c.out == id && c.in != id && c.w > 0.0) c.w = clampWeight(c.w * factor, cfg);
+}
+
+// F1 / F2: una salida (u oculta) muda o casi muda recibe más corriente de reposo y más peso excitatorio de entrada
+bool Genome::mutateWakeNeuron(NodeRole role, const NeatConfig& cfg, Rng& rng) {
+    std::vector<size_t> cand;
+    for (size_t k = 0; k < nodes_.size(); k++)
+        if (nodes_[k].role == role && nodes_[k].tasa >= 0.0 && nodes_[k].tasa <= cfg.umbral_muda) cand.push_back(k);
+    if (cand.empty()) return false;
+    NodeGene& n = nodes_[cand[randomIndex(rng, cand.size())]];
+    n.bias = std::clamp(n.bias + std::abs(gauss(rng, cfg.actividad_bias_sigma)), -cfg.bias_max, cfg.bias_max);
+    escalarEntradasExcitatorias(n.id, std::exp(std::abs(gauss(rng, cfg.actividad_peso_sigma))), cfg);
+    return true;
+}
+
+// F3: una oculta o salida saturada recibe menos corriente de reposo y menos peso excitatorio de entrada
+bool Genome::mutateCalmSaturated(const NeatConfig& cfg, Rng& rng) {
+    std::vector<size_t> cand;
+    for (size_t k = 0; k < nodes_.size(); k++)
+        if (nodes_[k].role != NodeRole::Input && nodes_[k].tasa >= cfg.umbral_saturacion) cand.push_back(k);
+    if (cand.empty()) return false;
+    NodeGene& n = nodes_[cand[randomIndex(rng, cand.size())]];
+    n.bias = std::clamp(n.bias - std::abs(gauss(rng, cfg.actividad_bias_sigma)), -cfg.bias_max, cfg.bias_max);
+    escalarEntradasExcitatorias(n.id, std::exp(-std::abs(gauss(rng, cfg.actividad_peso_sigma))), cfg);
+    return true;
+}
+
+// F4: una entrada muda o casi muda recibe más ganancia
+bool Genome::mutateGainMuteInputs(const NeatConfig& cfg, Rng& rng) {
+    std::vector<size_t> cand;
+    for (size_t k = 0; k < nodes_.size(); k++)
+        if (nodes_[k].role == NodeRole::Input && nodes_[k].tasa >= 0.0 && nodes_[k].tasa <= cfg.umbral_muda) cand.push_back(k);
+    if (cand.empty()) return false;
+    NodeGene& n = nodes_[cand[randomIndex(rng, cand.size())]];
+    n.gain = std::clamp(n.gain * std::exp(std::abs(gauss(rng, cfg.actividad_gain_sigma))), cfg.gain_min, cfg.gain_max);
+    return true;
+}
+
+// Mismo orden que buildNetwork: entradas, salidas y ocultas, cada grupo en el orden de nodes_
+void Genome::asignarTasas(const std::vector<long>& espigas, long pasos) {
+    size_t k = 0;
+    for (NodeRole role : {NodeRole::Input, NodeRole::Output, NodeRole::Hidden})
+        for (NodeGene& n : nodes_) {
+            if (n.role != role) continue;
+            n.tasa = (pasos > 0 && k < espigas.size()) ? static_cast<double>(espigas[k]) / pasos : -1.0;
+            k++;
+        }
 }
 
 // ───────────────────────────── fenotipo ─────────────────────────────

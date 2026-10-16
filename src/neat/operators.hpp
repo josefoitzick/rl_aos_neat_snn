@@ -28,10 +28,16 @@ enum class Operator {
     DuplicateNode,       // C5: duplicar una neurona oculta repartiendo sus salidas (Net2WiderNet)
     DeleteConnection,    // D1: borrar una conexión (y las ocultas que queden sin genes)
     DeleteSimpleNode,    // D2: borrar una oculta de 1 entrada y 1 salida (con puente) o sin salida/entrada
+    // Dirigidos por la actividad de la SNN (docs/experimentos/22_operadores_actividad.md): actúan sobre una neurona elegida
+    // por su tasa de disparo en la evaluación del padre (NodeGene::tasa). Sin neurona que cumpla, no se aplican.
+    WakeOutputs,         // F1: salida muda o casi muda (tasa ≤ umbral) → más corriente de reposo y más peso en sus entradas excitatorias
+    WakeHidden,          // F2: oculta muda → ídem
+    CalmSaturated,       // F3: oculta o salida saturada (tasa ≥ umbral) → menos corriente y menos excitación
+    GainMuteInputs,      // F4: entrada muda o casi muda → más ganancia
 };
 
 constexpr int kNumOperators = 3;        // tamaño del catálogo por defecto (NEAT clásico)
-constexpr int kNumOperatorTypes = 15;   // todos los operadores implementados
+constexpr int kNumOperatorTypes = 19;   // todos los operadores implementados
 
 inline const char* operatorName(Operator op) {
     switch (op) {
@@ -50,8 +56,18 @@ inline const char* operatorName(Operator op) {
         case Operator::DuplicateNode:    return "duplicate_node";
         case Operator::DeleteConnection: return "delete_connection";
         case Operator::DeleteSimpleNode: return "delete_simple_node";
+        case Operator::WakeOutputs:      return "despertar_salidas";
+        case Operator::WakeHidden:       return "despertar_ocultas";
+        case Operator::CalmSaturated:    return "calmar_saturadas";
+        case Operator::GainMuteInputs:   return "ganancia_entradas_mudas";
     }
     return "?";
+}
+
+// ¿El operador necesita la actividad de la SNN de cada genoma (NeatConfig::medir_actividad)?
+inline bool usaActividad(Operator op) {
+    return op == Operator::WakeOutputs || op == Operator::WakeHidden || op == Operator::CalmSaturated ||
+           op == Operator::GainMuteInputs;
 }
 
 inline std::vector<Operator> defaultCatalog() {

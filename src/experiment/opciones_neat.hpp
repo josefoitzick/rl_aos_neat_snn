@@ -67,6 +67,7 @@ inline void agregar(CLI::App& app, Opciones& o) {
 inline void finalizar(Opciones& o) {
     o.ncfg.weight_perturb_prob = 1.0 - o.weight_replace_prob;
     if (!o.catalog_txt.empty()) o.ncfg.catalog = neat::parseCatalog(o.catalog_txt);
+    neat::activarActividad(o.ncfg);
 }
 
 }  // namespace opciones_neat

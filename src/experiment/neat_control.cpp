@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
     CLI11_PARSE(app, argc, argv);
     ncfg.weight_perturb_prob = 1.0 - weight_replace_prob;
     if (!catalog_txt.empty()) ncfg.catalog = parseCatalog(catalog_txt);
+    activarActividad(ncfg);
     const bool default_catalog = ncfg.catalog == defaultCatalog();
     const size_t K = ncfg.catalog.size();
     if (!default_catalog && selector_name == "static" && p_txt.empty())
@@ -212,7 +213,7 @@ int main(int argc, char** argv) {
         const auto& G = pop.genomes();
         size_t champ = 0;
         for (size_t i = 1; i < G.size(); i++) if (G[i].fitness > G[champ].fitness) champ = i;
-        const double champ_test = eval::evaluateGenome(G[champ], ncfg, *probe, test_seeds, ecfg);
+        const double champ_test = eval::evaluateGenomeParallel(G[champ], ncfg, env_name, test_opt, test_seeds, ecfg);
         if (resample_train && champ_test > best_val) {
             best_val = champ_test;
             best_val_genome = G[champ];
@@ -283,7 +284,7 @@ int main(int argc, char** argv) {
     }
 
     const Genome& best = resample_train ? best_val_genome : pop.bestEver();
-    const double final_test = eval::evaluateGenome(best, ncfg, *probe, final_seeds, ecfg);
+    const double final_test = eval::evaluateGenomeParallel(best, ncfg, env_name, test_opt, final_seeds, ecfg);
     const double total = std::chrono::duration<double>(std::chrono::steady_clock::now() - t_start).count();
     std::printf("\nMejor genoma histórico: fitness entrenamiento %.2f · test final (%d episodios) %.2f · "
                 "%d ocultas, %d conexiones · %.1f s en total\n",

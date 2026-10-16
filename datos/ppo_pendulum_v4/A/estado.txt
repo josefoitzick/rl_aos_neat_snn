@@ -1,0 +1,6 @@
+iteracion=8
+corridas=64
+semilla_en_curso=1065
+K=3
+OBS=20
+binario=3b54b4ed39ef6b74

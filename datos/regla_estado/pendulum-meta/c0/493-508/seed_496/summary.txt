@@ -1,0 +1,9 @@
+env=pendulum-meta
+seed=496
+selector=ppo
+final_test=-756.346
+best_train=-735.465
+best_hidden=3
+best_conns=18
+resample_train=1
+best_validation_test=-682.417

@@ -1,0 +1,16 @@
+
+=== acrobot-swingup: 20 semillas pareadas
+  c0     0.5321 ± 0.0501
+  fija   0.5262 ± 0.0423
+  regla  0.5514 ± 0.0441
+  regla−c0: Δ +0.0193 (ee 0.0091), gana 14/20, p 0.0532, Holm 0.1063
+  fija−c0: Δ -0.0059 (ee 0.0106), gana 7/20, p 0.2024, Holm 0.2024
+  regla−fija: Δ +0.0252 (ee 0.0095), gana 15/20, p 0.0172, Holm 0.0515
+
+=== pendulum-meta: 300 semillas pareadas
+  c0     0.3577 ± 0.1533
+  fija   0.3369 ± 0.1348
+  regla  0.3321 ± 0.1312
+  regla−c0: Δ -0.0256 (ee 0.0110), gana 137/300, p 0.0305, Holm 0.0916
+  fija−c0: Δ -0.0208 (ee 0.0115), gana 140/300, p 0.0808, Holm 0.1615
+  regla−fija: Δ -0.0048 (ee 0.0097), gana 146/300, p 0.6454, Holm 0.6454
